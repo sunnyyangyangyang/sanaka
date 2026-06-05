@@ -48,6 +48,7 @@
           "ext": "saka",
           "name": "SanakaMachinePackage",
           "description": "Sanaka Virtual Machine",
+          "icon": "build/sanakafishpackage-document.icns",
           "isPackage": true,
           "role": "Viewer"
         }
@@ -62,7 +63,8 @@
         {
           "ext": "svm",
           "name": "SanakaMachineConfig",
-          "description": "Sanaka Virtual Machine Configuration"
+          "description": "Sanaka Virtual Machine Configuration",
+          "icon": "build/sanakafishpackage-document.ico"
         }
       ],
       "target": [
@@ -70,7 +72,9 @@
       ]
     },
     "nsis": {
-      "perMachine": true
+      "perMachine": true,
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     },
     "linux": {
       "icon": "assets/icons/sanakafish.png",
