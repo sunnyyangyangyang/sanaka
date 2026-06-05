@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "pack:mac": "bash ./scripts/package-sanaka-macos.sh /Volumes/sks/src/qemu-11.0.1/build-sanaka",
     "pack:win": "npx electron-builder --win",
+    "pack:win:dir": "bash ./scripts/package-sanaka-windows.sh \"/mnt/c/Program Files/qemu\"",
     "pack:linux": "npx electron-builder --linux"
   },
   "keywords": [

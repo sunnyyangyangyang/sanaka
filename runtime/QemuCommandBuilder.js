@@ -193,6 +193,8 @@ function ensureFile(filePath) {
 function resolveQemuShareDir(binaryPath) {
   const candidates = [
     path.resolve(path.dirname(binaryPath), '../share/qemu'),
+    path.resolve(path.dirname(binaryPath), 'share'),
+    path.resolve(path.dirname(binaryPath), '../share'),
     '/usr/share/qemu',
     '/usr/local/share/qemu',
     '/opt/homebrew/share/qemu'

@@ -268,4 +268,62 @@ describe('QemuCommandBuilder machine types', () => {
     expect(result.args).toContain(`if=pflash,format=raw,readonly=on,file=${path.join(shareDir, 'edk2-x86_64-code.fd')}`);
     expect(result.args.some((value) => String(value).includes('uefi-x86_64-vars.fd'))).toBe(true);
   });
+
+  it('resolves bundled Windows share firmware next to the embedded qemu directory', () => {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sanaka-qemu-win-'));
+    const fakeBinaryPath = path.join(tempRoot, 'qemu', 'qemu-system-x86_64.exe');
+    const shareDir = path.join(tempRoot, 'qemu', 'share');
+    fs.mkdirSync(path.dirname(fakeBinaryPath), { recursive: true });
+    fs.mkdirSync(shareDir, { recursive: true });
+    fs.writeFileSync(fakeBinaryPath, '');
+    fs.writeFileSync(path.join(shareDir, 'edk2-x86_64-code.fd'), 'code');
+    fs.writeFileSync(path.join(shareDir, 'edk2-i386-vars.fd'), 'vars');
+
+    const builder = new QemuCommandBuilder();
+    const runtimeDir = path.join(tempRoot, 'runtime');
+    fs.mkdirSync(runtimeDir, { recursive: true });
+
+    const result = builder.build({
+      machine: {
+        title: 'Windows Embedded QEMU',
+        system: {
+          arch: 'x86_64',
+          machine_type: 'q35',
+          accelerator: 'tcg',
+          boot_order: 'disk',
+          memory_mib: 2048,
+          cpu_cores: 2,
+          sound_card: 'intel-hda',
+          uefi: true
+        },
+        media: { iso: '', floppy: '' },
+        disks: [],
+        network: { enabled: false, mode: 'user', card: 'rtl8139' },
+        display: { frontend: 'sanaka', gpu: 'std', sanaka: { backend: 'vnc', scale_mode: 'fit', clipboard: true } },
+        peripherals: { usb_tablet: true },
+        advanced: { audio_backend: 'auto', qemu_args: '' }
+      },
+      environment: {
+        binaries: {
+          x86_64: { found: true, path: fakeBinaryPath }
+        },
+        accelerators: ['tcg']
+      },
+      runtimePaths: {
+        runtimeDir,
+        qmp: { transport: 'tcp', host: '127.0.0.1', port: 47001 }
+      },
+      displayConfig: {
+        port: 5901,
+        websocketPort: 5701,
+        displayNumber: 1
+      },
+      host: {
+        platform: 'win32',
+        arch: 'x64'
+      }
+    });
+
+    expect(result.args).toContain(`if=pflash,format=raw,readonly=on,file=${path.join(shareDir, 'edk2-x86_64-code.fd')}`);
+  });
 });
