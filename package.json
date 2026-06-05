@@ -43,12 +43,27 @@
     "mac": {
       "icon": "build/icon.icns",
       "category": "public.app-category.developer-tools",
+      "fileAssociations": [
+        {
+          "ext": "saka",
+          "name": "SanakaMachinePackage",
+          "description": "Sanaka Virtual Machine",
+          "role": "Viewer"
+        }
+      ],
       "target": [
         "dir"
       ]
     },
     "win": {
       "icon": "assets/icons/sanakafish.png",
+      "fileAssociations": [
+        {
+          "ext": "svm",
+          "name": "SanakaMachineConfig",
+          "description": "Sanaka Virtual Machine Configuration"
+        }
+      ],
       "target": [
         "nsis"
       ]

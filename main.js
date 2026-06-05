@@ -17,6 +17,11 @@ let mainWindow = null;
 let pendingSakaPaths = [];
 let runtimeManager = null;
 let diskImageService = null;
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
 
 function getDistIndexPath() {
   return path.join(__dirname, 'dist', 'index.html');
@@ -333,6 +338,19 @@ function createWindow() {
   });
 }
 
+function revealMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+
+  mainWindow.show();
+  mainWindow.focus();
+}
+
 function buildMenu() {
   const template = [
     {
@@ -612,6 +630,15 @@ app.on('open-file', (event, filePath) => {
   emitToRenderer('app:open-saka', { path: filePath });
 });
 
+app.on('second-instance', (_event, argv) => {
+  const startupSakaPaths = normalizeSakaArg(argv.slice(1));
+  if (startupSakaPaths.length > 0) {
+    pendingSakaPaths.push(...startupSakaPaths);
+    startupSakaPaths.forEach((filePath) => emitToRenderer('app:open-saka', { path: filePath }));
+  }
+  revealMainWindow();
+});
+
 app.whenReady().then(() => {
   const appIcon = getAppIcon();
   if (process.platform === 'darwin' && appIcon) {
@@ -671,6 +698,8 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+  } else {
+    revealMainWindow();
   }
 });
 

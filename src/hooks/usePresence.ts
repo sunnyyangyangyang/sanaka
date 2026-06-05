@@ -6,12 +6,16 @@ export function usePresence(open: boolean, durationMs = 220) {
 
   useEffect(() => {
     let frame = 0;
+    let nextFrame = 0;
     let timeout = 0;
 
     if (open) {
+      setVisible(false);
       setMounted(true);
       frame = window.requestAnimationFrame(() => {
-        setVisible(true);
+        nextFrame = window.requestAnimationFrame(() => {
+          setVisible(true);
+        });
       });
     } else {
       setVisible(false);
@@ -23,6 +27,9 @@ export function usePresence(open: boolean, durationMs = 220) {
     return () => {
       if (frame) {
         window.cancelAnimationFrame(frame);
+      }
+      if (nextFrame) {
+        window.cancelAnimationFrame(nextFrame);
       }
       if (timeout) {
         window.clearTimeout(timeout);

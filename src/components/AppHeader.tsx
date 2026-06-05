@@ -69,10 +69,11 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
     draft,
     recents,
     settings,
-    setAboutOpen,
+    openAboutDialog,
     renameMachine,
     duplicateMachine,
-    setDeleteTarget
+    setDeleteTarget,
+    highlightedMachinePath
   } = useAppStore();
   const t = useT();
   const logoRef = useRef<HTMLButtonElement>(null);
@@ -85,7 +86,16 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
   const [renameValue, setRenameValue] = useState('');
   const renameModal = usePresence(Boolean(renameTarget));
 
-  const navClass = (active: boolean) => (active ? 'workspace-sidebar__item workspace-sidebar__item--active' : 'workspace-sidebar__item');
+  const navClass = (active: boolean, flash: boolean) => {
+    const classNames = ['workspace-sidebar__item'];
+    if (active) {
+      classNames.push('workspace-sidebar__item--active');
+    }
+    if (flash) {
+      classNames.push('workspace-sidebar__item--flash');
+    }
+    return classNames.join(' ');
+  };
   const utilityClass = (active: boolean) => (active ? 'workspace-sidebar__utility workspace-sidebar__utility--active' : 'workspace-sidebar__utility');
 
   const handleContextMenu = (e: React.MouseEvent, item: typeof workspace.items[0]) => {
@@ -192,7 +202,7 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
               workspace.items.map((item) => (
                 <button
                   key={`${item.id}:${item.path ?? item.source}`}
-                  className={navClass(workspace.primary?.id === item.id && workspace.primary?.path === item.path)}
+                  className={navClass(workspace.primary?.id === item.id && workspace.primary?.path === item.path, Boolean(item.path && item.path === highlightedMachinePath))}
                   type="button"
                   aria-label={item.title}
                   title={item.title}
@@ -231,7 +241,7 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
               </span>
               <span className="workspace-sidebar__text">{t('home.sidebarSettings')}</span>
             </button>
-            <button className="workspace-sidebar__utility" type="button" aria-label={t('home.sidebarAbout')} title={t('home.sidebarAbout')} onClick={() => setAboutOpen(true)}>
+            <button className="workspace-sidebar__utility" type="button" aria-label={t('home.sidebarAbout')} title={t('home.sidebarAbout')} onClick={openAboutDialog}>
               <span className="workspace-sidebar__icon">
                 <SidebarIcon name="about" />
               </span>

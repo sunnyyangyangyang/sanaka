@@ -300,6 +300,17 @@ button {
   z-index: 0;
 }
 
+.workspace-sidebar__item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(205, 186, 242, 0.02) 0%, rgba(205, 186, 242, 0.36) 50%, rgba(205, 186, 242, 0.02) 100%);
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
 .workspace-sidebar__item--active::before,
 .workspace-sidebar__utility--active::before {
   background: rgba(205, 186, 242, 0.22);
@@ -308,6 +319,10 @@ button {
 .workspace-sidebar__item--active,
 .workspace-sidebar__utility--active {
   color: var(--primary-strong);
+}
+
+.workspace-sidebar__item--flash::after {
+  animation: sidebar-item-flash 2000ms ease-in-out;
 }
 
 .workspace-sidebar__item-copy,
@@ -391,6 +406,21 @@ button {
 .workspace-sidebar__item-state--dirty {
   background: rgba(155, 106, 0, 0.62);
   color: transparent;
+}
+
+@keyframes sidebar-item-flash {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .workspace-sidebar__spacer {

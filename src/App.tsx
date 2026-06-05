@@ -50,6 +50,7 @@ function MainLayout() {
     ready,
     aboutOpen,
     setAboutOpen,
+    openAboutDialog,
     openSakaByPath,
     transition,
     deleteTarget,
@@ -68,14 +69,14 @@ function MainLayout() {
       if (!result) return;
       navigate(result.kind === 'machine' ? machineRoute(result.machineId, result.path) : '/machines/new');
     });
-    const disposeAbout = window.electronAPI.app.onOpenAbout(() => setAboutOpen(true));
+    const disposeAbout = window.electronAPI.app.onOpenAbout(() => openAboutDialog());
     const disposeSettings = window.electronAPI.app.onOpenSettings(() => navigate('/settings'));
     return () => {
       disposeOpenSaka();
       disposeAbout();
       disposeSettings();
     };
-  }, [navigate, openSakaByPath, setAboutOpen]);
+  }, [navigate, openAboutDialog, openSakaByPath, setAboutOpen]);
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;

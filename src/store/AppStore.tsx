@@ -151,6 +151,7 @@ interface AppStoreValue {
   draft: MachineDraft | null;
   appMeta: Awaited<ReturnType<typeof window.electronAPI.app.getMetadata>> | null;
   aboutOpen: boolean;
+  openAboutDialog: () => void;
   activity: ActivityItem[];
   messages: Record<string, unknown>;
   templates: TemplateCatalogEntry[];
@@ -183,6 +184,7 @@ interface AppStoreValue {
   setStartError: (target: { title: string; description: string; detail?: string } | null) => void;
   renameMachine: (machinePath: string, newTitle: string) => Promise<boolean>;
   duplicateMachine: (machinePath: string) => Promise<boolean>;
+  highlightedMachinePath: string | null;
 }
 
 const AppStoreContext = createContext<AppStoreValue | null>(null);
@@ -222,6 +224,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [draft, setDraft] = useState<MachineDraft | null>(null);
   const [appMeta, setAppMeta] = useState<Awaited<ReturnType<typeof window.electronAPI.app.getMetadata>> | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [highlightedMachinePath, setHighlightedMachinePath] = useState<string | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [runtimeEnvironment, setRuntimeEnvironment] = useState<Awaited<ReturnType<typeof window.electronAPI.runtime.getRuntimeEnvironment>> | null>(null);
   const [runtimeMachines, setRuntimeMachines] = useState<Awaited<ReturnType<typeof window.electronAPI.runtime.listRunningMachines>>>([]);
@@ -316,6 +319,19 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     const next = (await window.electronAPI.recents.push(entry)) as RecentEntry[];
     const parsed = recentEntrySchema.array().parse(next);
     setRecents(parsed);
+  }, []);
+
+  const flashMachineInSidebar = useCallback((machinePath: string) => {
+    setHighlightedMachinePath(machinePath);
+    window.setTimeout(() => {
+      setHighlightedMachinePath((current) => (current === machinePath ? null : current));
+    }, 2000);
+  }, []);
+
+  const openAboutDialog = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      setAboutOpen(true);
+    });
   }, []);
 
   const createDraftFromTemplateKey = useCallback(async (templateKey: string) => {
@@ -489,9 +505,10 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         ...current
       ]);
       await pushRecent(makeRecentEntry(normalizedMachine, opened.path, opened.previewPath));
+      flashMachineInSidebar(opened.path);
       return { kind: 'machine' as const, machineId: normalizedMachine.id, path: opened.path };
     },
-    [persistSettings, pushRecent, settings, recents]
+    [flashMachineInSidebar, persistSettings, pushRecent, settings, recents]
   );
 
   const openSakaByPath = useCallback(
@@ -852,6 +869,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       draft,
       appMeta,
       aboutOpen,
+      openAboutDialog,
       activity,
       messages: resources[settings.language],
       templates: [...settings.templateCatalog].sort((a, b) => a.order - b.order),
@@ -883,10 +901,12 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       startError,
       setStartError,
       renameMachine,
-      duplicateMachine
+      duplicateMachine,
+      highlightedMachinePath
     }),
     [
       aboutOpen,
+      openAboutDialog,
       activity,
       appMeta,
       applyTemplateSelection,
@@ -918,7 +938,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       deleteTarget,
       startError,
       renameMachine,
-      duplicateMachine
+      duplicateMachine,
+      highlightedMachinePath
     ]
   );
 
