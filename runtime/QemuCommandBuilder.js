@@ -102,9 +102,18 @@ function mapBootOrder(bootOrder) {
   return null;
 }
 
-function mapAudioDevice(machine, audioBackend) {
+function mapAudioDevice(machine, audioBackend, hostPlatform) {
   const soundCard = machine.system?.sound_card || 'intel-hda';
-  if (!audioBackend || audioBackend === 'auto' || audioBackend === 'spice') {
+  const resolvedBackend =
+    !audioBackend || audioBackend === 'auto'
+      ? (hostPlatform === 'darwin'
+        ? 'coreaudio'
+        : hostPlatform === 'win32'
+          ? 'directsound'
+          : 'none')
+      : audioBackend;
+
+  if (resolvedBackend === 'none' || resolvedBackend === 'spice') {
     if (soundCard === 'intel-hda') {
       return ['-device', 'intel-hda', '-device', 'hda-duplex'];
     }
@@ -121,10 +130,10 @@ function mapAudioDevice(machine, audioBackend) {
   }
 
   const audiodevType =
-    audioBackend === 'coreaudio' ? 'coreaudio'
-      : audioBackend === 'pulseaudio' ? 'pa'
-        : audioBackend === 'pipewire' ? 'pipewire'
-          : audioBackend === 'directsound' ? 'dsound'
+    resolvedBackend === 'coreaudio' ? 'coreaudio'
+      : resolvedBackend === 'pulseaudio' ? 'pa'
+        : resolvedBackend === 'pipewire' ? 'pipewire'
+          : resolvedBackend === 'directsound' ? 'dsound'
             : null;
 
   if (!audiodevType) {
@@ -339,7 +348,7 @@ class QemuCommandBuilder {
       args.push('-usb', '-device', 'usb-tablet');
     }
 
-    args.push(...mapAudioDevice(machine, machine.advanced?.audio_backend));
+    args.push(...mapAudioDevice(machine, machine.advanced?.audio_backend, host.platform));
 
     args.push(
       '-vnc',

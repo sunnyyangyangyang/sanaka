@@ -29,6 +29,23 @@ AARCH64_ENTITLEMENTS="${SANAKA_QEMU_AARCH64_ENTITLEMENTS:-$DEFAULT_AARCH64_ENTIT
 rm -rf "$QEMU_BIN_DIR" "$QEMU_SHARE_DIR"
 mkdir -p "$QEMU_BIN_DIR" "$QEMU_SHARE_DIR" "$FRAMEWORKS_DIR"
 
+find_qemu_share_source() {
+  local candidates=(
+    "/opt/homebrew/share/qemu"
+    "/usr/local/share/qemu"
+    "/Volumes/sks/src/qemu-stage/opt/homebrew/share/qemu"
+  )
+
+  for candidate in "${candidates[@]}"; do
+    if [[ -d "$candidate" ]]; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 SYSTEM_TARGETS=(
   x86_64
   i386
@@ -63,27 +80,62 @@ for tool in qemu-img; do
   fi
 done
 
-if [[ -d "$BUILD_DIR/pc-bios" ]]; then
-  rm -rf "$QEMU_SHARE_DIR"
-  mkdir -p "$QEMU_SHARE_DIR"
-  cp -R "$BUILD_DIR/pc-bios/." "$QEMU_SHARE_DIR/"
-fi
+copy_runtime_firmware_if_present() {
+  local source_dir="$1"
+  shift
 
-prune_uefi_firmware() {
-  if [[ "${SANAKA_KEEP_UEFI_FIRMWARE:-0}" == "1" ]]; then
-    return 0
-  fi
-
-  find "$QEMU_SHARE_DIR" -maxdepth 1 -type f \( \
-    -name 'edk2-*.fd' -o \
-    -name 'edk2-*.bin' \
-  \) \
-    ! -name 'edk2-x86_64-code.fd' \
-    ! -name 'edk2-x86_64-secure-code.fd' \
-    -delete
+  for firmware in "$@"; do
+    if [[ -f "$source_dir/$firmware" ]]; then
+      cp -f "$source_dir/$firmware" "$QEMU_SHARE_DIR/$firmware"
+    fi
+  done
 }
 
-prune_uefi_firmware
+if [[ -d "$BUILD_DIR/pc-bios" ]]; then
+  copy_runtime_firmware_if_present "$BUILD_DIR/pc-bios" \
+    edk2-x86_64-code.fd \
+    edk2-x86_64-secure-code.fd
+fi
+
+QEMU_SHARE_SOURCE="$(find_qemu_share_source || true)"
+
+if [[ -n "$QEMU_SHARE_SOURCE" ]]; then
+  copy_runtime_firmware_if_present "$QEMU_SHARE_SOURCE" \
+    bios-256k.bin \
+    bios.bin \
+    vgabios.bin \
+    vgabios-stdvga.bin \
+    vgabios-cirrus.bin \
+    vgabios-vmware.bin \
+    vgabios-qxl.bin \
+    vgabios-virtio.bin \
+    vgabios-ramfb.bin \
+    vgabios-bochs-display.bin \
+    kvmvapic.bin \
+    linuxboot_dma.bin \
+    multiboot_dma.bin \
+    pvh.bin \
+    efi-e1000.rom \
+    efi-e1000e.rom \
+    efi-eepro100.rom \
+    efi-ne2k_pci.rom \
+    efi-pcnet.rom \
+    efi-rtl8139.rom \
+    efi-virtio.rom \
+    efi-vmxnet3.rom \
+    pxe-e1000.rom \
+    pxe-eepro100.rom \
+    pxe-ne2k_pci.rom \
+    pxe-pcnet.rom \
+    pxe-rtl8139.rom \
+    pxe-virtio.rom \
+    qboot.rom
+
+  if [[ -d "$QEMU_SHARE_SOURCE/keymaps" ]]; then
+    mkdir -p "$QEMU_SHARE_DIR/keymaps"
+    cp -R "$QEMU_SHARE_SOURCE/keymaps/." "$QEMU_SHARE_DIR/keymaps/"
+  fi
+fi
 
 is_system_dep() {
   local dep="$1"
