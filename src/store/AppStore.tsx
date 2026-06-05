@@ -257,9 +257,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     setAppMeta(meta);
     setRuntimeEnvironment(environment);
     setRuntimeMachines(machines);
-    if (meta.platform === 'darwin') {
-      document.body.classList.add('platform-darwin');
-    }
+    document.body.classList.toggle('platform-darwin', meta.platform === 'darwin');
     setReady(true);
   }, []);
 

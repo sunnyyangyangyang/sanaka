@@ -1826,8 +1826,7 @@ textarea:focus {
 /* --- floating top toolbar --- */
 .console-topbar {
   position: absolute;
-  /* Offset for macOS traffic lights (38px dragbar height) */
-  top: 38px;
+  top: 0;
   left: 0;
   right: 0;
   z-index: 10;
@@ -1850,9 +1849,8 @@ textarea:focus {
   gap: 8px;
 }
 
-/* macOS traffic lights spacing: 38px dragbar + 40px breathing room */
 .console-topbar__left {
-  padding-left: 78px;
+  padding-left: 0;
 }
 
 .console-topbar__center {
@@ -1944,7 +1942,18 @@ textarea:focus {
   background: #1c1724;
   overflow: hidden;
   min-height: 0;
-  /* VM画面安全区：38px交通灯 + 46px工具栏 = 84px */
+  margin-top: 46px;
+}
+
+body.platform-darwin .console-topbar {
+  top: 38px;
+}
+
+body.platform-darwin .console-topbar__left {
+  padding-left: 78px;
+}
+
+body.platform-darwin .page--console .console-viewport {
   margin-top: 84px;
 }
 
