@@ -14,6 +14,13 @@ const MACHINE_DISKS_DIRECTORY = 'Disks';
 const DEFAULT_MACHINE_ROOT = 'Sanaka';
 const APP_ICON_PATH = path.join(__dirname, 'assets', 'icons', 'logo.svg');
 
+function readPositiveIntEnv(name, fallback) {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
 let mainWindow = null;
 let pendingSakaPaths = [];
 let runtimeManager = null;
@@ -74,7 +81,9 @@ function getUpdateService() {
       loadSettings: () => readJsonFile(SETTINGS_FILE, null),
       saveSettings: (settings) => writeJsonFile(SETTINGS_FILE, settings),
       emitToRenderer,
-      openExternal: (url) => shell.openExternal(url)
+      openExternal: (url) => shell.openExternal(url),
+      startupDelayMs: readPositiveIntEnv('SANAKA_UPDATE_STARTUP_DELAY_MS', undefined),
+      checkIntervalMs: readPositiveIntEnv('SANAKA_UPDATE_INTERVAL_MS', undefined)
     });
   }
   return updateService;

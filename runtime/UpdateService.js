@@ -4,8 +4,8 @@ const UPDATE_CHANNELS = ['release', 'beta'];
 const DEFAULT_STARTUP_DELAY_MS = 5_000;
 const DEFAULT_CHECK_INTERVAL_MS = 8 * 60 * 60 * 1_000;
 const DEFAULT_MANIFEST_URLS = {
-  release: 'https://raw.githubusercontent.com/steve372a/sanaka/main/updates/release.toml',
-  beta: 'https://raw.githubusercontent.com/steve372a/sanaka/main/updates/beta.toml'
+  release: 'https://steve372a.github.io/update/release.toml',
+  beta: 'https://steve372a.github.io/update/beta.toml'
 };
 
 function detectUpdateChannel(version) {
