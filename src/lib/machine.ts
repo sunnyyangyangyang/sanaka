@@ -92,6 +92,17 @@ function dedupeKey(item: Pick<WorkspaceMachineItem, 'id'>) {
   return item.id;
 }
 
+export async function checkMachinePaths(items: WorkspaceMachineItem[]): Promise<WorkspaceMachineItem[]> {
+  const checked = await Promise.all(
+    items.map(async (item) => {
+      if (!item.path || item.source === 'draft') return item;
+      const exists = await window.electronAPI.files.pathExists(item.path);
+      return exists ? item : { ...item, missing: true };
+    })
+  );
+  return checked;
+}
+
 export function makeWorkspaceMachineItems(recents: RecentEntry[], draft: MachineDraft | null): WorkspaceMachineItem[] {
   const seenRecentIds = new Set<string>();
   const items = recents.reduce<WorkspaceMachineItem[]>((current, entry) => {

@@ -36,7 +36,8 @@ function mockElectronApi() {
       trashMachineBundle: vi.fn(async () => ({ ok: true as const })),
       renamePath: vi.fn(async () => ({ ok: true as const })),
       copyPath: vi.fn(async () => ({ ok: true as const })),
-      openPath: vi.fn(async () => ({ ok: true as const }))
+      openPath: vi.fn(async () => ({ ok: true as const })),
+      pathExists: vi.fn(async () => true)
     },
     dialogs: {
       pickDisk: vi.fn(async () => null),
@@ -48,7 +49,8 @@ function mockElectronApi() {
       prepareManaged: vi.fn(async () => ({ ok: true, path: '/tmp/example.saka/Disks/disk.qcow2', relativePath: 'Disks/disk.qcow2' })),
       resize: vi.fn(async () => ({ ok: true, path: '/tmp/disk.qcow2' })),
       convert: vi.fn(async () => ({ ok: true, path: '/tmp/disk-converted.qcow2' })),
-      reclaimSpace: vi.fn(async () => ({ ok: true, path: '/tmp/disk.qcow2', reclaimedBytes: 0 }))
+      reclaimSpace: vi.fn(async () => ({ ok: true, path: '/tmp/disk.qcow2', reclaimedBytes: 0 })),
+      listLocalImages: vi.fn(async () => ({ images: [] }))
     },
     settings: {
       load: vi.fn(async () => null),

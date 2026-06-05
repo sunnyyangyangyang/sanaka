@@ -93,6 +93,13 @@ export const sakaMachineSchema = z.object({
       readonly: z.boolean().optional().default(false),
       storage_mode: diskStorageModeSchema.optional().default('external'),
       source_path: z.string().optional().default(''),
+      image_options: z
+        .object({
+          compression: z.boolean().default(false),
+          sparse: z.boolean().default(false),
+          preallocate: z.boolean().default(false)
+        })
+        .optional(),
       pending_create: z
         .object({
           size: z.number().positive(),
@@ -202,6 +209,7 @@ export interface WorkspaceMachineItem {
   status: 'saved' | 'template' | 'draft';
   source: 'recent' | 'draft';
   dirty?: boolean;
+  missing?: boolean;
 }
 
 export interface WorkspaceSelection {

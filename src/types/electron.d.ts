@@ -46,6 +46,9 @@ export interface PrepareManagedDiskRequest {
   size: number;
   unit: DiskSizeUnit;
   format: DiskImageFormat;
+  options?: {
+    preallocate?: boolean;
+  };
 }
 
 export interface PrepareManagedDiskResult extends DiskImageMutationResult {
@@ -209,6 +212,7 @@ export interface ElectronApi {
     renamePath: (oldPath: string, newPath: string) => Promise<{ ok: true }>;
     copyPath: (srcPath: string, destPath: string) => Promise<{ ok: true }>;
     openPath: (path: string) => Promise<{ ok: true }>;
+    pathExists: (path: string) => Promise<boolean>;
   };
   dialogs: {
     pickDisk: () => Promise<PickedPath | null>;
@@ -221,6 +225,15 @@ export interface ElectronApi {
     resize: (request: ResizeDiskImageRequest) => Promise<DiskImageMutationResult>;
     convert: (request: ConvertDiskImageRequest) => Promise<DiskImageMutationResult>;
     reclaimSpace: (imagePath: string) => Promise<ReclaimDiskSpaceResult>;
+    listLocalImages: (bundlePath: string) => Promise<{
+      images: Array<{
+        path: string;
+        name: string;
+        format: string;
+        size: number;
+        unit: string;
+      }>;
+    }>;
   };
   settings: {
     load: () => Promise<unknown>;

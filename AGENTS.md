@@ -1,18 +1,61 @@
-# Frontend Design Skills
+# Sanaka Agent Guide
 
-This repository contains 21 opinionated web design skills from 12 sources.
-Skills are located in the `skills-src/` directory — each contains a `SKILL.md` with instructions.
+This file tells AI agents how to work inside the `Sanaka` repository.
 
-## Available Skill Categories
+Read this together with [工种.md](/Users/steve372dzudo/sanaka/工种.md).
 
-- **Meta**: `webdesign-review` — comprehensive design review orchestrating all domains
-- **Core Design**: `ui-design`, `ux-design` — layout, grids, hierarchy, IA, interaction
-- **Detail**: `web-typography`, `color-theory`, `accessibility` — fonts, color, WCAG/BFSG
-- **Implementation**: `usability`, `responsive-design`, `navigation-design`, `images-media`, `branding-identity`
-- **Strategy**: `customer-journey`, `design-process`, `ai-design-workflow`, `landing-pages`, `website-audit`
-- **Trends & Patterns**: `design-trends`, `ui-patterns`, `visual-direction`, `component-patterns`, `agent-ui-design`
+## Roles
 
-## Usage
+- Frontend AI (`Kimi`, `Gemini`, or similar) owns UI, layout, motion, styling, and renderer-side interaction.
+- Backend AI (`GPT`) owns Electron main process, preload, IPC, file rules, runtime, packaging, and stability work.
 
-To use a skill, read the `SKILL.md` file in the corresponding `skills-src/<name>/` directory.
-For a comprehensive design review, start with `webdesign-review` which orchestrates all domain skills.
+Default rule:
+
+- If the task is mainly visual or interaction-facing, frontend AI should lead.
+- If the task is mainly logic, filesystem, IPC, runtime, build, or packaging, backend AI should lead.
+
+## Handoff
+
+Cross-role requests must go through `xx-want.md`.
+
+Examples:
+
+- `gpt-want.md`: GPT writes this when frontend follow-up is needed.
+- `kimi-want.md`: Kimi writes this when backend follow-up is needed.
+
+Handoff docs should be short, concrete, and user-facing in outcome. They should say:
+
+- what problem exists
+- what behavior should change
+- what the receiving AI needs to do
+- how to verify completion
+
+## Working Rules
+
+- Do not casually rewrite the other role's area just because it is faster.
+- Small cross-boundary fixes are allowed when needed to unblock a bug, but do not change ownership of the feature.
+- If you touch the other side, say so clearly in your handoff or final note.
+- Prefer one side owning one problem at a time instead of two AIs half-editing the same feature.
+
+## Frontend Notes
+
+- Avoid exposing internal terms like `.saka`, `machine.svm`, bundle roots, IPC details, or raw QEMU flags to end users unless the screen is explicitly advanced/debug.
+- Respect the current product direction: object-first workspace, restrained Material You feel, centered content, and low-noise UI.
+- Before using repository design skills, open the matching `SKILL.md` under `skills-src/` and follow only the parts relevant to the task.
+
+## Backend Notes
+
+- Keep platform behavior explicit. If macOS, Windows, and Linux differ, encode the rule clearly instead of hiding it in ad-hoc conditionals.
+- Prefer returning structured, user-meaningful errors rather than leaking raw internal failures directly into renderer state.
+- Recent items, machine bundles, runtime state, and packaging behavior must remain consistent with the product rules already established in the repo.
+
+## Repository Habits
+
+- Use `rg` for search.
+- Use `apply_patch` for manual edits.
+- Do not revert unrelated user or collaborator changes.
+- Treat the repository as potentially dirty at all times.
+
+## Source Of Truth
+
+For role ownership and collaboration expectations, `工种.md` is the main source of truth.

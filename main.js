@@ -487,7 +487,14 @@ const ipcHandlers = {
     return createMachineBundleAtDefaultLocation(payload);
   },
   async readSaka(_event, filePath) {
-    return openSakaByPath(filePath);
+    try {
+      return await openSakaByPath(filePath);
+    } catch (error) {
+      if (error && error.code === 'ENOENT') {
+        return null;
+      }
+      throw error;
+    }
   },
   async saveSaka(_event, payload) {
     const resolved = await resolveSaveTarget(payload.path);
@@ -600,6 +607,9 @@ const ipcHandlers = {
   },
   async reclaimDiskSpace(_event, imagePath) {
     return getDiskImageService().reclaimSpace(imagePath);
+  },
+  async listLocalImages(_event, bundlePath) {
+    return getDiskImageService().listLocalImages(bundlePath);
   },
   async pickIso() {
     const selectedPath = await openFileByDialog({
@@ -735,6 +745,7 @@ app.whenReady().then(() => {
   ipcMain.handle('disks:resize', ipcHandlers.resizeDisk);
   ipcMain.handle('disks:convert', ipcHandlers.convertDisk);
   ipcMain.handle('disks:reclaim-space', ipcHandlers.reclaimDiskSpace);
+  ipcMain.handle('disks:list-local-images', ipcHandlers.listLocalImages);
   ipcMain.handle('settings:load', ipcHandlers.loadSettings);
   ipcMain.handle('settings:save', ipcHandlers.saveSettings);
   ipcMain.handle('recents:list', ipcHandlers.listRecents);

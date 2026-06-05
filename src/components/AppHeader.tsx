@@ -202,22 +202,23 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
               workspace.items.map((item) => (
                 <button
                   key={`${item.id}:${item.path ?? item.source}`}
-                  className={navClass(workspace.primary?.id === item.id && workspace.primary?.path === item.path, Boolean(item.path && item.path === highlightedMachinePath))}
+                  className={navClass(workspace.primary?.id === item.id && workspace.primary?.path === item.path, Boolean(item.path && item.path === highlightedMachinePath)) + (item.missing ? ' workspace-sidebar__item--missing' : '')}
                   type="button"
                   aria-label={item.title}
-                  title={item.title}
-                  onClick={() => navigate(item.path ? machineRoute(item.id, item.path) : item.source === 'draft' ? '/machines/new' : '/')}
-                  onContextMenu={(e) => handleContextMenu(e, item)}
+                  title={item.missing ? t('home.machineMissing') : item.title}
+                  disabled={item.missing}
+                  onClick={() => !item.missing && navigate(item.path ? machineRoute(item.id, item.path) : item.source === 'draft' ? '/machines/new' : '/')}
+                  onContextMenu={(e) => !item.missing && handleContextMenu(e, item)}
                 >
-                  <span className="workspace-sidebar__icon workspace-sidebar__icon--machine">
+                  <span className={`workspace-sidebar__icon workspace-sidebar__icon--machine${item.missing ? ' workspace-sidebar__icon--missing' : ''}`}>
                     <SidebarIcon name="machine" />
                   </span>
-                  <span className="workspace-sidebar__item-copy">
+                  <span className={`workspace-sidebar__item-copy${item.missing ? ' workspace-sidebar__item-copy--missing' : ''}`}>
                     <strong>{item.title}</strong>
                     <small>{item.templateLabel ?? t('common.machine')}</small>
                   </span>
                   <span className={item.dirty ? 'workspace-sidebar__item-state workspace-sidebar__item-state--dirty' : 'workspace-sidebar__item-state'}>
-                    {item.dirty ? t('common.dirtyShort') : t('home.cardStatusSaved')}
+                    {item.dirty ? t('common.dirtyShort') : item.missing ? t('home.machineMissing') : t('home.cardStatusSaved')}
                   </span>
                 </button>
               ))

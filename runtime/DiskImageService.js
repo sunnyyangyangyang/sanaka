@@ -11,6 +11,7 @@ const SIZE_UNITS = {
   MB: 'M',
   GB: 'G'
 };
+const SUPPORTED_IMAGE_EXTENSIONS = ['.qcow2', '.qed', '.qcow', '.vmdk', '.vhd', '.vpc', '.vdi', '.img', '.raw'];
 
 function normalizeImageFormat(format) {
   const normalized = String(format || '').trim().toLowerCase();
@@ -107,6 +108,24 @@ function supportsCompression(format) {
 
 function extractBackingFile(info) {
   return info['full-backing-filename'] || info['backing-filename'] || info.backingFile || undefined;
+}
+
+function toDisplayCapacity(bytes) {
+  const numeric = Number(bytes || 0);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return { size: 0, unit: 'GB' };
+  }
+  const gb = numeric / (1024 ** 3);
+  if (gb >= 1) {
+    return {
+      size: Number(gb.toFixed(gb >= 10 ? 0 : 1)),
+      unit: 'GB'
+    };
+  }
+  return {
+    size: Math.max(1, Math.round(numeric / (1024 ** 2))),
+    unit: 'MB'
+  };
 }
 
 class DiskImageService {
@@ -265,6 +284,57 @@ class DiskImageService {
     } finally {
       await this.fs.rm(tempDirectory, { recursive: true, force: true }).catch(() => null);
     }
+  }
+
+  async listLocalImages(bundlePath) {
+    if (!bundlePath) {
+      throw new Error('Machine bundle path is required.');
+    }
+
+    const absoluteBundlePath = path.resolve(bundlePath);
+    const disksDirectory = path.join(absoluteBundlePath, 'Disks');
+
+    let entries = [];
+    try {
+      entries = await this.fs.readdir(disksDirectory, { withFileTypes: true });
+    } catch (error) {
+      if (error && error.code === 'ENOENT') {
+        return { images: [] };
+      }
+      throw error;
+    }
+
+    const files = entries.filter((entry) => entry.isFile() && SUPPORTED_IMAGE_EXTENSIONS.includes(path.extname(entry.name).toLowerCase()));
+    const images = [];
+
+    for (const entry of files) {
+      const absolutePath = path.join(disksDirectory, entry.name);
+      try {
+        const info = await this.getInfo(absolutePath);
+        const capacity = toDisplayCapacity(info.virtualSize);
+        images.push({
+          path: path.posix.join('Disks', entry.name),
+          name: path.parse(entry.name).name,
+          format: info.format,
+          size: capacity.size,
+          unit: capacity.unit
+        });
+      } catch {
+        const stats = await this.fs.stat(absolutePath);
+        const capacity = toDisplayCapacity(stats.size);
+        images.push({
+          path: path.posix.join('Disks', entry.name),
+          name: path.parse(entry.name).name,
+          format: normalizeImageFormat(path.extname(entry.name).slice(1)) || 'raw',
+          size: capacity.size,
+          unit: capacity.unit
+        });
+      }
+    }
+
+    return {
+      images
+    };
   }
 
   async #resolveCreateTargetPath(request, format) {

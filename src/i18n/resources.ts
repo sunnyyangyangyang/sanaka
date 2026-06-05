@@ -44,7 +44,9 @@ export const resources = {
       cardOpen: '查看详情',
       cardOpenConsole: '启动虚拟机',
       cardEnterMachine: '进入虚拟机',
-      cardContinue: '继续编辑'
+      cardContinue: '继续编辑',
+      machineMissing: '该虚拟机不可用',
+      machineMissingDelete: '删除'
     },
     builder: {
       title: '创建虚拟机',
@@ -321,6 +323,7 @@ export const resources = {
       title: '镜像管理',
       tabs: {
         import: '导入镜像',
+        browse: '浏览本地',
         create: '创建镜像',
         manage: '管理镜像'
       },
@@ -331,6 +334,13 @@ export const resources = {
         title: '导入已有镜像',
         description: '选择已有的磁盘镜像文件，将其添加到当前虚拟机。',
         button: '选择镜像文件'
+      },
+      browse: {
+        title: '浏览本地镜像',
+        description: '从虚拟机文件夹中选择已有的镜像文件。',
+        empty: '没有找到本地镜像文件',
+        noBundlePath: '请先保存虚拟机配置',
+        addSelected: '添加选中镜像 ({{count}})'
       },
       create: {
         title: '创建新镜像',
@@ -357,6 +367,11 @@ export const resources = {
         advanced: '高级选项',
         advancedWarning: '高级选项仅供有经验的用户使用，修改前请备份数据。'
       },
+      toast: {
+        resized: '已从 {{oldSize}} 调整至 {{newSize}}',
+        converted: '已转换至 {{format}}',
+        reclaimed: '已回收了 {{size}} MB 空间'
+      },
       operations: {
         resize: '调整大小',
         convert: '格式转换',
@@ -366,7 +381,11 @@ export const resources = {
         compression: '启用压缩',
         sparse: '稀疏分配',
         preallocate: '预分配空间'
-      }
+      },
+      selectOperation: '选择操作...',
+      processing: '处理中...',
+      apply: '应用',
+      noChanges: '没有需要应用的更改'
     }
   },
   'en-US': {
@@ -414,7 +433,9 @@ export const resources = {
       cardOpen: 'View Details',
       cardOpenConsole: 'Start Machine',
       cardEnterMachine: 'Enter Machine',
-      cardContinue: 'Continue Editing'
+      cardContinue: 'Continue Editing',
+      machineMissing: 'This machine is unavailable',
+      machineMissingDelete: 'Delete'
     },
     builder: {
       title: 'Create Machine',
@@ -689,6 +710,7 @@ export const resources = {
       title: 'Disk Image Manager',
       tabs: {
         import: 'Import',
+        browse: 'Browse Local',
         create: 'Create',
         manage: 'Manage'
       },
@@ -699,6 +721,13 @@ export const resources = {
         title: 'Import Existing Image',
         description: 'Select an existing disk image file to add to the current virtual machine.',
         button: 'Select Image File'
+      },
+      browse: {
+        title: 'Browse Local Images',
+        description: 'Select existing image files from the virtual machine folder.',
+        empty: 'No local image files found',
+        noBundlePath: 'Please save the virtual machine configuration first',
+        addSelected: 'Add Selected ({{count}})'
       },
       create: {
         title: 'Create New Image',
@@ -725,6 +754,11 @@ export const resources = {
         advanced: 'Advanced Options',
         advancedWarning: 'Advanced options are for experienced users only. Please backup your data before making changes.'
       },
+      toast: {
+        resized: 'Resized from {{oldSize}} to {{newSize}}',
+        converted: 'Converted to {{format}}',
+        reclaimed: 'Reclaimed {{size}} MB of space'
+      },
       operations: {
         resize: 'Resize',
         convert: 'Convert Format',
@@ -734,7 +768,11 @@ export const resources = {
         compression: 'Enable Compression',
         sparse: 'Sparse Allocation',
         preallocate: 'Preallocate Space'
-      }
+      },
+      selectOperation: 'Select Operation...',
+      processing: 'Processing...',
+      apply: 'Apply',
+      noChanges: 'No changes to apply'
     }
   }
 } as const;

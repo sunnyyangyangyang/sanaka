@@ -60,9 +60,13 @@ export function MachineDetailsPage() {
   useEffect(() => {
     const pathParam = params.get('path');
     if (pathParam && draft?.filePath !== pathParam) {
-      void openSakaByPath(pathParam);
+      void openSakaByPath(pathParam).then((result) => {
+        if (!result) {
+          navigate('/', { replace: true });
+        }
+      });
     }
-  }, [draft?.filePath, openSakaByPath, params]);
+  }, [draft?.filePath, navigate, openSakaByPath, params]);
 
   if (!draft) {
     return <div className="page-loading">{t('common.loading')}</div>;

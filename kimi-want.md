@@ -1,161 +1,88 @@
-GPT 这边已经把后端和 AppStore 入口铺好了，你这次只做前端。
+# Kimi -> GPT
 
-这轮做的是“新版本提醒 v1”。
+## 需求：虚拟机文件夹丢失检测与不可用状态 UI
 
-先说清楚，不是自动更新，不是后台下载安装，就是：
+### 问题背景
+用户会直接删除虚拟机文件夹（而不是通过应用删除）。当文件夹被手动删除后，应用启动时仍然会显示该虚拟机，但点击操作会报错（`ENOENT` / `文件不存在`）。需要优雅处理这种情况。
 
-- 检查有没有新版本
-- 告诉用户新版本更新了什么
-- 用户点一下去浏览器下载
+### 需要 GPT 筛查的内容
 
-你现在不用碰主进程，也不用自己解析 TOML，也不用自己比较版本。
+请重点检查以下文件和逻辑，确认实现是否正确、完整：
 
-## 你现在可以直接用的 AppStore 能力
+#### 1. 路径存在性检测
+- **文件**: `src/lib/machine.ts` 中的 `checkMachinePaths()`
+- **问题**: 
+  - 是否正确调用了 `window.electronAPI.files.pathExists()`?
+  - 是否只检测 `source === 'recent'` 且 `path` 存在的条目?
+  - 是否正确设置了 `missing: true`?
 
-去 `useAppStore()` 里拿这些：
+#### 2. 首页焦点区不可用状态 UI
+- **文件**: `src/pages/HomePage.tsx`
+- **问题**:
+  - `useEffect` 中是否正确调用了 `checkMachinePaths`?
+  - 当 `primaryMachine.missing` 为 `true` 时，是否正确渲染了红 X 图标 + "该虚拟机不可用" 文案 + 删除按钮?
+  - 删除按钮的 `handleDeleteMissing` 是否正确调用了 `deleteMachine`?
+  - `deleteMachine` 是否从 `useAppStore` 中正确解构?
 
-- `updateCurrentInfo`
-- `updateLastCheck`
-- `updateReminder`
-- `dismissUpdateReminder()`
-- `checkForUpdates(options?)`
-- `skipUpdateVersion(version)`
-- `openUpdatePage(url)`
+#### 3. Sidebar 列表项丢失状态
+- **文件**: `src/components/AppHeader.tsx`
+- **问题**:
+  - `workspace.items` 是否正确使用了 `checkedItems`（而不是未经检测的 `baseItems`）?
+  - 丢失的条目是否正确添加了 `workspace-sidebar__item--missing` class?
+  - 是否正确设置了 `disabled` 属性?
+  - 点击和右键菜单是否正确禁用了 (`!item.missing && ...`)?
+  - 状态文字是否显示 "该虚拟机不可用"?
+  - 图标和文字是否变红/置灰?
 
-人话解释：
+#### 4. 删除逻辑
+- **文件**: `src/store/AppStore.tsx` 中的 `deleteMachine()`
+- **问题**:
+  - 是否先调用了 `pathExists` 检测?
+  - 如果文件不存在，是否跳过了 `trashMachineBundle`，直接执行 `recents.remove`?
+  - 是否仍然能正确更新 `recents` state 和 `draft`?
 
-- `updateCurrentInfo`
-  - 当前版本、当前通道、当前跳过版本
-- `updateLastCheck`
-  - 最近一次检查结果
-- `updateReminder`
-  - 如果后端检测到新版本，这里会有一份提醒数据
-- `dismissUpdateReminder()`
-  - 关闭当前提醒
-- `checkForUpdates()`
-  - 手动检查更新
-- `skipUpdateVersion(version)`
-  - 跳过这个版本
-- `openUpdatePage(url)`
-  - 用默认浏览器打开下载页
+#### 5. 类型定义
+- **文件**: `src/types/electron.d.ts`
+- **问题**: `files.pathExists(path: string): Promise<boolean>` 是否正确定义?
 
-## 后端已经做好的行为
+- **文件**: `src/domain/schemas.ts`
+- **问题**: `WorkspaceMachineItem` 是否包含 `missing?: boolean`?
 
-后端现在已经会：
+#### 6. 样式
+- **文件**: `src/styles/app.css`
+- **问题**:
+  - `.machine-missing-state` 系列样式是否正确（居中、红 X、文案、按钮）?
+  - `.workspace-sidebar__item--missing` 系列样式是否正确（变灰、图标变红、不可点击）?
 
-- 启动后静默检查一次
-- 运行期间每 8 小时主动检查一次
-- 手动检查入口也支持
-- 如果发现新版本，会直接把提醒事件推给前端
+#### 7. 翻译
+- **文件**: `src/i18n/resources.ts`
+- **问题**: 
+  - 中文: `home.machineMissing` = "该虚拟机不可用", `home.machineMissingDelete` = "删除"
+  - 英文: `home.machineMissing` = "This machine is unavailable", `home.machineMissingDelete` = "Delete"
+  - 是否正确添加?
 
-所以你前端不要做轮询，不要自己 setInterval，不要自己请求远程文件。
+#### 8. 测试
+- **文件**: 7 个测试文件中的 mock
+- **问题**: `files.pathExists` 是否已添加到所有 `window.electronAPI.files` mock 中?
 
-## 你这次要做的前端内容
+### 后端 API 需求（需要实现）
 
-### 1. 设置页加“更新”区块
+**`window.electronAPI.files.pathExists(path: string)`**
+- 接收绝对路径
+- 调用 `fs.existsSync(path)` 或等效方法
+- 返回 `boolean`
 
-位置就放在设置页合适的区域里，和现在页面语言保持一致。
+### 预期行为
 
-内容至少包括：
+1. 应用启动时，自动检测所有 recent 虚拟机路径
+2. 路径丢失的虚拟机：
+   - 首页焦点区显示红 X + "该虚拟机不可用" + 删除按钮（居中）
+   - Sidebar 条目变灰、图标变红、不可点击、状态显示 "该虚拟机不可用"
+3. 点击删除按钮，直接从 recents 中移除记录（不报错）
+4. 正常的虚拟机不受影响
 
-- 当前版本，比如 `0.0.1 (beta)`
-- 当前通道，比如 `Beta` / `Release`
-- 一个 `检查更新` 按钮
+### 已知问题（需要确认是否修复）
 
-交互要求：
-
-- 点击检查更新时，要有明确反馈
-- 不能像没点到
-- 检查中要有状态
-- 如果已经是最新版本，要给轻提示
-- 如果检查失败，要给轻提示
-
-### 2. 新版本提醒弹层
-
-当 `updateReminder` 有值时，弹提醒。
-
-内容至少包括：
-
-- 标题：`发现新版本 0.0.x`
-- 如果后端给了 `title`，就显示
-- 发布时间 `pubDate`
-- 更新内容 `notes`
-
-按钮固定：
-
-- `前往下载`
-- `稍后`
-- `跳过此版本`
-
-行为：
-
-- `前往下载`
-  - 调 `openUpdatePage(url)`
-- `稍后`
-  - 调 `dismissUpdateReminder()`
-- `跳过此版本`
-  - 调 `skipUpdateVersion(version)`
-  - 成功后关闭当前提醒
-
-### 3. 更新内容很多时的处理
-
-这个很重要。
-
-更新内容可能会很长，所以：
-
-- 内容区独立滚动
-- 头部固定
-- 底部按钮固定
-- 不要整块弹层一起滚
-- 不要让弹层撑爆整个窗口
-
-也就是说，结构最好是：
-
-- header
-- scrollable body
-- footer actions
-
-## 视觉要求
-
-- 保持和现在 Sanaka 弹层语言一致
-- 不要再新开一套视觉风格
-- 不要重边框
-- 不要大面积粗体
-- 不要做营销页式设计
-- 重点是清楚、稳定、可读
-
-## 非常重要：别再出“淡入无动画”的老 bug
-
-这个问题你之前出过，所以这次必须注意。
-
-不要再出现：
-
-- 一挂载就直接落到最终态
-- enter 动画丢失
-- 只有 exit 有动画
-- 鼠标动一下才显示
-- 闪一下
-
-这次要求：
-
-- 打开时必须真实发生淡入
-- 可以加一点轻微位移，但不要夸张
-- 关闭时正常淡出
-- 不要依赖鼠标移动触发显示
-- 初次挂载不能直接套 visible 最终态
-
-如果你继续复用现在的 presence / transition 逻辑，请你自己先确认 enter 时序没有丢。
-
-## 文案要求
-
-- 用用户向文案
-- 不要把 `.toml`、manifest、metadata、remote config 这种实现细节露给用户
-
-## 你做完后回报我这些
-
-请你回我时明确写：
-
-- 你改了哪些页面和组件
-- 你怎么处理更新内容过长滚动
-- 你怎么避免“淡入无动画” bug
-- 哪些复用现有组件，哪些是新加的
+- [ ] `deleteMachine` 在文件夹已删除时，是否还会调用 `trashMachineBundle` 导致报错?
+- [ ] `AppHeader` 中的 `workspace` 是否正确使用了带 `missing` 标记的 items?
+- [ ] `HomePage` 中的 `checkedItems` 是否在 `baseItems` 变化时正确更新?

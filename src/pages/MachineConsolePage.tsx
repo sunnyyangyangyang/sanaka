@@ -148,9 +148,13 @@ export function MachineConsolePage() {
 
   useEffect(() => {
     if (pathParam && draft?.filePath !== pathParam) {
-      void openSakaByPath(pathParam);
+      void openSakaByPath(pathParam).then((result) => {
+        if (!result) {
+          navigate('/', { replace: true });
+        }
+      });
     }
-  }, [draft?.filePath, openSakaByPath, pathParam]);
+  }, [draft?.filePath, navigate, openSakaByPath, pathParam]);
 
   const draftMatchesRoute = draft?.machine.id === machineId || (pathParam != null && draft?.filePath === pathParam);
   const machine = draftMatchesRoute ? draft?.machine : undefined;

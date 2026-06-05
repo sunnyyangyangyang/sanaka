@@ -32,7 +32,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     prepareManaged: (request) => ipcRenderer.invoke('disks:prepare-managed', request),
     resize: (request) => ipcRenderer.invoke('disks:resize', request),
     convert: (request) => ipcRenderer.invoke('disks:convert', request),
-    reclaimSpace: (imagePath) => ipcRenderer.invoke('disks:reclaim-space', imagePath)
+    reclaimSpace: (imagePath) => ipcRenderer.invoke('disks:reclaim-space', imagePath),
+    listLocalImages: (bundlePath) => ipcRenderer.invoke('disks:list-local-images', bundlePath)
   },
   settings: {
     load: () => ipcRenderer.invoke('settings:load'),

@@ -113,7 +113,10 @@ async function materializeManagedDisks(machine: SakaMachine, bundlePath: string)
       name,
       size: disk.pending_create.size,
       unit: disk.pending_create.unit,
-      format
+      format,
+      options: {
+        preallocate: disk.image_options?.preallocate ?? false
+      }
     });
 
     if (!result.ok || !result.relativePath) {
@@ -126,6 +129,7 @@ async function materializeManagedDisks(machine: SakaMachine, bundlePath: string)
       format,
       storage_mode: 'managed',
       source_path: '',
+      image_options: disk.image_options,
       pending_create: undefined
     };
   }
@@ -597,9 +601,25 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const openSakaByPath = useCallback(
     async (filePath: string) => {
       const opened = await window.electronAPI.files.readSaka(filePath);
+      if (!opened) {
+        const next = (await window.electronAPI.recents.remove(filePath)) as RecentEntry[];
+        const parsed = recentEntrySchema.array().parse(next);
+        setRecents(parsed);
+        setActivity((current) => [
+          makeActivity(
+            settings.language === 'zh-CN' ? '虚拟机不可用' : 'Machine Unavailable',
+            settings.language === 'zh-CN' ? '该虚拟机文件不存在，已从最近列表移除。' : 'This machine no longer exists and was removed from recents.'
+          ),
+          ...current
+        ]);
+        if (draft?.filePath === filePath) {
+          setDraft(null);
+        }
+        return null;
+      }
       return openSakaPayload(opened);
     },
-    [openSakaPayload]
+    [draft?.filePath, openSakaPayload, settings.language]
   );
 
   const openSakaDialog = useCallback(async () => openSakaPayload(await window.electronAPI.files.openMachineBundle()), [openSakaPayload]);
@@ -682,8 +702,11 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const deleteMachine = useCallback(
     async (machinePath: string) => {
       if (!machinePath) return false;
+      const exists = await window.electronAPI.files.pathExists(machinePath);
       try {
-        await window.electronAPI.files.trashMachineBundle(machinePath);
+        if (exists) {
+          await window.electronAPI.files.trashMachineBundle(machinePath);
+        }
         const next = (await window.electronAPI.recents.remove(machinePath)) as RecentEntry[];
         const parsed = recentEntrySchema.array().parse(next);
         setRecents(parsed);

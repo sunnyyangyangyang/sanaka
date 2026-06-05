@@ -868,6 +868,7 @@ export function MachineBuilderPage() {
         existingDisks={machine.disks}
         onDisksChange={(newDisks) => updateDraft((current) => ({ ...current, disks: newDisks as SakaMachine['disks'] }))}
         defaultInterface={defaultDiskInterface}
+        bundlePath={draft.filePath}
       />
     </div>
   );

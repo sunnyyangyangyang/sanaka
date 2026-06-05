@@ -413,6 +413,21 @@ body.platform-darwin .app-dragbar {
   color: transparent;
 }
 
+.workspace-sidebar__item--missing {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.workspace-sidebar__item--missing .workspace-sidebar__icon--missing {
+  color: var(--danger);
+}
+
+.workspace-sidebar__item--missing .workspace-sidebar__item-copy--missing strong,
+.workspace-sidebar__item--missing .workspace-sidebar__item-copy--missing small {
+  color: var(--muted);
+}
+
 @keyframes sidebar-item-flash {
   0% {
     opacity: 0;
@@ -3113,6 +3128,10 @@ body.platform-darwin .app-shell__content {
 }
 
 .disk-image-manager__select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -3120,6 +3139,7 @@ body.platform-darwin .app-shell__content {
   max-height: 240px;
   overflow-y: auto;
   animation: dropdownFadeIn 150ms var(--ease-standard);
+  z-index: 100;
 }
 
 @keyframes dropdownFadeIn {
@@ -3394,6 +3414,78 @@ body.platform-darwin .app-shell__content {
   opacity: 0.5;
 }
 
+.disk-image-manager__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.disk-image-manager__local-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.disk-image-manager__local-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 150ms var(--ease-standard);
+}
+
+.disk-image-manager__local-item:hover {
+  border-color: rgba(146, 121, 200, 0.5);
+  background: rgba(146, 121, 200, 0.04);
+}
+
+.disk-image-manager__local-item--selected {
+  border-color: rgba(146, 121, 200, 0.65);
+  background: rgba(146, 121, 200, 0.08);
+}
+
+.disk-image-manager__local-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 150ms var(--ease-standard);
+}
+
+.disk-image-manager__local-item--selected .disk-image-manager__local-checkbox {
+  background: var(--primary-strong);
+  border-color: var(--primary-strong);
+  color: #fff;
+}
+
+.disk-image-manager__local-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.disk-image-manager__local-info strong {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.disk-image-manager__local-info span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 .disk-image-manager__list {
   display: flex;
   flex-direction: column;
@@ -3510,16 +3602,78 @@ body.platform-darwin .app-shell__content {
 
 .disk-image-item__operations {
   display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.disk-image-item__operations .disk-image-manager__select {
+  width: 220px;
+}
+
+.disk-image-item__operation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  margin-top: 12px;
+  animation: panelFadeIn 200ms ease-out;
+}
+
+@keyframes panelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.disk-image-item__operation-row {
+  display: flex;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.disk-image-item__operations .button {
+.disk-image-item__operation-row input[type="number"] {
+  width: 92px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.disk-image-item__operation-row input[type="number"]:focus {
+  outline: none;
+  border-color: rgba(146, 121, 200, 0.65);
+  box-shadow: 0 0 0 4px rgba(205, 186, 242, 0.26);
+}
+
+.disk-image-manager__select--small {
+  width: 100px;
+}
+
+.disk-image-manager__select--medium {
+  width: 220px;
+}
+
+.disk-image-item__operation-row .button {
+  margin-left: auto;
+}
+
+.disk-image-item__apply-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  font-size: 0.85rem;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
 }
 
 .disk-image-item__advanced {
@@ -3873,6 +4027,81 @@ body.platform-darwin .app-shell__content {
 
 .about-dialog__link svg {
   flex-shrink: 0;
+}
+
+/* ============================================
+   Toast
+   ============================================ */
+
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(30, 26, 35, 0.92);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.5;
+  box-shadow: 0 8px 24px rgba(30, 26, 35, 0.2);
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 300ms ease, transform 300ms ease;
+  pointer-events: none;
+  max-width: min(90vw, 480px);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast--hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
+}
+
+.toast__message {
+  display: block;
+}
+
+/* ============================================
+   Machine Missing State
+   ============================================ */
+
+.machine-missing-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.machine-missing-state__icon {
+  width: 56px;
+  height: 56px;
+  color: var(--danger);
+  opacity: 0.9;
+}
+
+.machine-missing-state__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.machine-missing-state__text {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--danger);
+  font-weight: 500;
 }
 
 /* ============================================
