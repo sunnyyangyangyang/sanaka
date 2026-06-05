@@ -1,33 +1,22 @@
+<div align="center">
+
 # Sanaka
 
-Sanaka is a desktop virtual machine manager built with Electron and QEMU.
+精致 QEMU 虚拟机管理软件前端
 
-Current packaged version:
+![License: MIT](https://img.shields.io/badge/License-GPL2-yellow.svg)
+[![Platform](https://img.shields.io/badge/OS-macOS%2FWindows%2FLinux-blue)](https://github.com/steve372a/pier)
+[![Version](https://img.shields.io/badge/version-0.0.1(beta)-brightgreen)]()
+[![Stars](https://img.shields.io/github/stars/steve372a/sanaka?style=social)]()
 
-- `0.0.1 (beta)`
+</div>
 
-## Repository Layout
+## 💗特点
 
-- [docs/architecture](/Users/steve372dzudo/sanaka/docs/architecture): product, machine format, runtime, packaging, and system behavior
-- [docs/design](/Users/steve372dzudo/sanaka/docs/design): visual rules, wireframes, and builder design notes
-- [docs/collaboration](/Users/steve372dzudo/sanaka/docs/collaboration): handoff notes, role split, and review logs
-- [docs/journal](/Users/steve372dzudo/sanaka/docs/journal): project notes and milestone writeups
-- [docs/legal](/Users/steve372dzudo/sanaka/docs/legal): licensing and notice files
-- [speccodex](/Users/steve372dzudo/sanaka/speccodex): feature specs and task tracking
-- [scripts](/Users/steve372dzudo/sanaka/scripts): build, packaging, and embedding scripts
+| 超级跨平台！ | 统一界面 | 内置显示器 |
+| --- | --- | --- |
+| 支持 macOS/Linux/Windows | 通过 Electron 实现界面统一 | 内置 noVNC 并突破声音传输限制
 
-## Key Docs
+## 🚀 快速上手
 
-- [Product Context](/Users/steve372dzudo/sanaka/docs/architecture/context.md)
-- [Product Architecture](/Users/steve372dzudo/sanaka/docs/architecture/product-architecture.md)
-- [Display Architecture](/Users/steve372dzudo/sanaka/docs/architecture/display-architecture.md)
-- [Saka Format](/Users/steve372dzudo/sanaka/docs/architecture/saka-format.md)
-- [QEMU Packaging Flow](/Users/steve372dzudo/sanaka/docs/architecture/QEMU打包流程.md)
-- [Design Spec](/Users/steve372dzudo/sanaka/docs/design/design-spec.md)
-- [Design Wireframe](/Users/steve372dzudo/sanaka/docs/design/design-wireframe.md)
-- [Role Split](/Users/steve372dzudo/sanaka/docs/collaboration/工种.md)
-
-## Legal
-
-- [LICENSE](/Users/steve372dzudo/sanaka/LICENSE)
-- [NOTICE](/Users/steve372dzudo/sanaka/NOTICE)
+前往 [Releases](https://github.com/steve372a/sanaka/releases) 下载最新版适合您系统的包。
