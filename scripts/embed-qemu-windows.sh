@@ -38,6 +38,10 @@ SYSTEM_TARGETS=(
   qemu-system-x86_64.exe
   qemu-system-i386.exe
   qemu-system-aarch64.exe
+  qemu-system-arm.exe
+  qemu-system-riscv64.exe
+  qemu-system-ppc.exe
+  qemu-system-ppc64.exe
 )
 
 TOOLS=(
