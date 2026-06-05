@@ -1,14 +1,41 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "${1:-}" == "" ]]; then
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+OUTPUT_ROOT="$REPO_ROOT/release"
+
+resolve_qemu_dir() {
+  if [[ -n "${1:-}" ]]; then
+    printf '%s\n' "$1"
+    return 0
+  fi
+
+  local candidates=(
+    "/c/Program Files/qemu"
+    "/c/Program Files/QEMU"
+    "/mnt/c/Program Files/qemu"
+    "/mnt/c/Program Files/QEMU"
+    "C:/Program Files/qemu"
+    "C:/Program Files/QEMU"
+  )
+
+  for candidate in "${candidates[@]}"; do
+    if [[ -d "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+QEMU_DIR="$(resolve_qemu_dir "${1:-}" || true)"
+
+if [[ -z "$QEMU_DIR" ]]; then
+  echo "QEMU directory not found automatically." >&2
   echo "Usage: $0 <qemu-install-dir>" >&2
   exit 1
 fi
-
-QEMU_DIR="$1"
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUTPUT_ROOT="$REPO_ROOT/release"
 
 cd "$REPO_ROOT"
 
