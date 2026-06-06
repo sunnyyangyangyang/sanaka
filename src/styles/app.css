@@ -4196,6 +4196,35 @@ body.platform-darwin .app-shell__content {
   word-break: break-all;
 }
 
+.debug-command-panel__field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.debug-command-panel__copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+  flex-shrink: 0;
+}
+
+.debug-command-panel__copy-btn:hover {
+  background: rgba(107, 76, 138, 0.08);
+  color: #6B4C8A;
+  border-color: rgba(107, 76, 138, 0.2);
+}
+
 .debug-command-panel__args {
   display: flex;
   flex-wrap: wrap;
@@ -4229,6 +4258,9 @@ body.platform-darwin .app-shell__content {
   color: var(--text);
   white-space: pre-wrap;
   word-break: break-all;
+  overflow-x: auto;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @keyframes fadeIn {

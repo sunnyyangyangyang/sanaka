@@ -32,12 +32,26 @@ const TerminalIcon = () => (
   </svg>
 );
 
+const CopyIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '14px', height: '14px' }}>
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '14px', height: '14px' }}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
 export function DebugCommandPanel({ bundlePath }: DebugCommandPanelProps) {
   const t = useT();
   const [expanded, setExpanded] = useState(false);
   const [preview, setPreview] = useState<RuntimeCommandPreview | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleToggle = useCallback(async () => {
     if (expanded) {
@@ -62,6 +76,17 @@ export function DebugCommandPanel({ bundlePath }: DebugCommandPanelProps) {
       setLoading(false);
     }
   }, [bundlePath, expanded, preview, t]);
+
+  const handleCopy = useCallback(async () => {
+    if (!preview?.commandLine) return;
+    try {
+      await navigator.clipboard.writeText(preview.commandLine);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  }, [preview]);
 
   if (!bundlePath) {
     return (
@@ -126,7 +151,18 @@ export function DebugCommandPanel({ bundlePath }: DebugCommandPanelProps) {
                 </pre>
               </div>
               <div className="debug-command-panel__field debug-command-panel__field--block">
-                <span>{t('details.debugCommandLine')}</span>
+                <div className="debug-command-panel__field-header">
+                  <span>{t('details.debugCommandLine')}</span>
+                  <button
+                    className="debug-command-panel__copy-btn"
+                    type="button"
+                    onClick={handleCopy}
+                    title={copied ? t('common.copied') : t('common.copy')}
+                  >
+                    {copied ? <CheckIcon /> : <CopyIcon />}
+                    <span>{copied ? t('common.copied') : t('common.copy')}</span>
+                  </button>
+                </div>
                 <pre className="debug-command-panel__command-line">{preview.commandLine}</pre>
               </div>
             </div>

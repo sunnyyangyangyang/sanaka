@@ -14,7 +14,9 @@ export const resources = {
       openTemplate: '打开虚拟机配置',
       importDisk: '导入现有磁盘',
       close: '关闭',
-      confirm: '是'
+      confirm: '是',
+      copy: '复制',
+      copied: '已复制'
     },
     home: {
       shellLabel: 'Desktop Workspace',
@@ -412,7 +414,9 @@ export const resources = {
       openTemplate: 'Open Machine Config',
       importDisk: 'Import Disk',
       close: 'Close',
-      confirm: 'Yes'
+      confirm: 'Yes',
+      copy: 'Copy',
+      copied: 'Copied'
     },
     home: {
       shellLabel: 'Desktop Workspace',
