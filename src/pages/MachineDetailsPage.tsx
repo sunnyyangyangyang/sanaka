@@ -70,6 +70,16 @@ export function MachineDetailsPage() {
     }
   }, [draft?.filePath, navigate, openSakaByPath, params]);
 
+  useEffect(() => {
+    if (!draft?.filePath) return;
+    if (pendingConsolePathRef.current !== draft.filePath) return;
+    const pendingRuntimeState = getRuntimeStateForMachine(draft.machine.id);
+    if (!pendingRuntimeState || (pendingRuntimeState.status !== 'starting' && pendingRuntimeState.status !== 'running')) return;
+
+    pendingConsolePathRef.current = null;
+    navigate(consoleRoute(pendingRuntimeState.machineId, draft.filePath), { replace: true });
+  }, [draft?.filePath, draft?.machine.id, getRuntimeStateForMachine, navigate]);
+
   if (!draft) {
     return <div className="page-loading">{t('common.loading')}</div>;
   }
@@ -80,15 +90,6 @@ export function MachineDetailsPage() {
   const isMachineRunning = machineStatus === 'running' || machineStatus === 'starting';
   const qemuAvailable = runtimeEnvironment?.available ?? false;
   const audioHint = makeAudioHint(machine.display.frontend, machine.display.sanaka?.backend ?? settings.runtimeDefaults.displayBackendHint, machine.advanced.audio_backend);
-
-  useEffect(() => {
-    if (!draft?.filePath) return;
-    if (pendingConsolePathRef.current !== draft.filePath) return;
-    if (!runtimeState || (runtimeState.status !== 'starting' && runtimeState.status !== 'running')) return;
-
-    pendingConsolePathRef.current = null;
-    navigate(consoleRoute(runtimeState.machineId, draft.filePath), { replace: true });
-  }, [draft?.filePath, navigate, runtimeState]);
 
   const handlePlayClick = () => {
     if (!draft.filePath || !qemuAvailable) return;
@@ -178,20 +179,10 @@ export function MachineDetailsPage() {
             </section>
 
             {!qemuAvailable && (
-              <div
-                style={{
-                  marginBottom: '20px',
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  background: 'rgba(255,193,7,0.12)',
-                  color: 'var(--warning-text, #6d5c00)',
-                  fontSize: '0.85rem'
-                }}
-                role="alert"
-              >
+              <div className="warning-banner warning-banner--details" role="alert">
                 <strong>{t('common.qemuMissing')}</strong>
                 {runtimeEnvironment?.installHint && (
-                  <span style={{ display: 'block', marginTop: '4px', fontSize: '0.8rem', opacity: 0.7 }}>
+                  <span className="warning-banner__hint">
                     {runtimeEnvironment.installHint}
                   </span>
                 )}

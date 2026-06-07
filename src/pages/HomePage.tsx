@@ -220,20 +220,10 @@ export function HomePage() {
                 </div>
 
                 {!qemuAvailable && (
-                  <div
-                    style={{
-                      marginBottom: '16px',
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      background: 'rgba(255,193,7,0.12)',
-                      color: 'var(--warning-text, #6d5c00)',
-                      fontSize: '0.84rem'
-                    }}
-                    role="alert"
-                  >
+                  <div className="warning-banner" role="alert">
                     {t('common.qemuMissing')}
                     {runtimeEnvironment?.installHint && (
-                      <span style={{ display: 'block', marginTop: '4px', fontSize: '0.78rem', opacity: 0.7 }}>
+                      <span className="warning-banner__hint" style={{ fontSize: '0.78rem' }}>
                         {runtimeEnvironment.installHint}
                       </span>
                     )}

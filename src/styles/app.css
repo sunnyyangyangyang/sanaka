@@ -29,13 +29,57 @@
   --line: #ddd3e7;
   --line-strong: #d2c5df;
   --text: #1e1a23;
+  --text-primary: var(--text);
   --muted: #6a6273;
   --primary: #cdbaf2;
   --primary-strong: #9279c8;
   --primary-soft: #ece3fb;
   --success: #1b7a58;
   --warning: #9b6a00;
+  --warning-text: #6d5c00;
   --danger: #a93a55;
+  --white: #ffffff;
+  --surface-raised: #ebe2f8;
+  --surface-raised-strong: #e8e0f0;
+  --overlay-soft: rgba(117, 99, 148, 0.08);
+  --overlay-soft-strong: rgba(117, 99, 148, 0.16);
+  --overlay-soft-text: rgba(74, 55, 98, 0.88);
+  --overlay-soft-text-muted: rgba(74, 55, 98, 0.72);
+  --warning-bg: rgba(255, 193, 7, 0.12);
+  --warning-border: rgba(255, 193, 7, 0.24);
+  --console-surface: #1c1724;
+  --console-surface-alt: #201b2a;
+  --console-text: #f5f1ff;
+  --console-text-muted: rgba(245, 241, 255, 0.72);
+  --console-text-subtle: rgba(245, 241, 255, 0.68);
+  --console-text-faint: rgba(245, 241, 255, 0.4);
+  --console-hint: rgba(245, 241, 255, 0.35);
+  --console-error-text: rgba(255, 160, 160, 0.9);
+  --console-error-soft: rgba(255, 155, 155, 0.7);
+  --console-overlay: rgba(23, 18, 30, 0.78);
+  --sidebar-surface: rgba(251, 248, 253, 0.96);
+  --surface-card: rgba(255, 255, 255, 0.94);
+  --surface-card-strong: rgba(255, 255, 255, 0.99);
+  --surface-floating: rgba(255, 255, 255, 0.9);
+  --surface-floating-soft: rgba(255, 255, 255, 0.8);
+  --surface-floating-muted: rgba(255, 255, 255, 0.6);
+  --surface-overlay: rgba(30, 26, 35, 0.65);
+  --about-surface: #e8e0f0;
+  --about-sweep: rgba(232, 224, 240, 1);
+  --about-text: #3d2a4f;
+  --about-text-muted: #6b4c8a;
+  --primary-text: #3e3152;
+  --primary-hover: #c6b0ee;
+  --input-surface: #ffffff;
+  --input-surface-strong: #fffbff;
+  --interactive-surface: #ffffff;
+  --interactive-hover: #f4edf8;
+  --toggle-thumb: #ffffff;
+  --link-accent: #6b4c8a;
+  --link-accent-hover: #9b7cb8;
+  --code-surface: rgba(30, 26, 35, 0.04);
+  --code-chip: rgba(107, 76, 138, 0.08);
+  --border-subtle: rgba(61, 42, 79, 0.12);
   --radius-xl: 20px;
   --radius-lg: 16px;
   --radius-md: 12px;
@@ -44,6 +88,72 @@
   --shadow-panel: 0 10px 24px rgba(89, 70, 118, 0.08);
   --shadow-soft: 0 4px 12px rgba(89, 70, 118, 0.06);
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1a1625;
+  --bg-soft: #1e1a2b;
+  --panel: #252236;
+  --panel-soft: #2a2540;
+  --panel-muted: #302a45;
+  --line: #3d3652;
+  --line-strong: #4a4260;
+  --text: #e8e2f5;
+  --text-primary: var(--text);
+  --muted: #9b92b0;
+  --primary: #a78bda;
+  --primary-strong: #c4b0f0;
+  --primary-soft: #3a3055;
+  --success: #4caf7c;
+  --warning: #d4a843;
+  --warning-text: #e8d89a;
+  --danger: #e07088;
+  --white: #ffffff;
+  --surface-raised: #2e2845;
+  --surface-raised-strong: #352e4f;
+  --overlay-soft: rgba(167, 139, 218, 0.1);
+  --overlay-soft-strong: rgba(167, 139, 218, 0.18);
+  --overlay-soft-text: rgba(232, 226, 245, 0.9);
+  --overlay-soft-text-muted: rgba(232, 226, 245, 0.7);
+  --warning-bg: rgba(212, 168, 67, 0.12);
+  --warning-border: rgba(212, 168, 67, 0.24);
+  --console-surface: #141020;
+  --console-surface-alt: #1a1625;
+  --console-text: #e8e2f5;
+  --console-text-muted: rgba(232, 226, 245, 0.72);
+  --console-text-subtle: rgba(232, 226, 245, 0.68);
+  --console-text-faint: rgba(232, 226, 245, 0.4);
+  --console-hint: rgba(232, 226, 245, 0.35);
+  --console-error-text: rgba(255, 160, 160, 0.9);
+  --console-error-soft: rgba(255, 155, 155, 0.7);
+  --console-overlay: rgba(20, 16, 32, 0.85);
+  --sidebar-surface: rgba(30, 26, 43, 0.96);
+  --surface-card: rgba(37, 34, 54, 0.94);
+  --surface-card-strong: rgba(42, 37, 64, 0.99);
+  --surface-floating: rgba(37, 34, 54, 0.96);
+  --surface-floating-soft: rgba(42, 37, 64, 0.86);
+  --surface-floating-muted: rgba(48, 42, 69, 0.72);
+  --surface-overlay: rgba(20, 16, 32, 0.72);
+  --about-surface: #201a2d;
+  --about-sweep: rgba(32, 26, 45, 1);
+  --about-text: #e8e2f5;
+  --about-text-muted: #b9afcf;
+  --primary-text: #20182c;
+  --primary-hover: #b89ee7;
+  --input-surface: #252236;
+  --input-surface-strong: #2a2540;
+  --interactive-surface: #252236;
+  --interactive-hover: #312b49;
+  --toggle-thumb: #f4efff;
+  --link-accent: #c4b0f0;
+  --link-accent-hover: #dccfff;
+  --code-surface: rgba(255, 255, 255, 0.06);
+  --code-chip: rgba(196, 176, 240, 0.14);
+  --border-subtle: rgba(196, 176, 240, 0.18);
+  --shadow-sidebar: 10px 0 24px rgba(0, 0, 0, 0.25);
+  --shadow-panel: 0 10px 24px rgba(0, 0, 0, 0.2);
+  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 * {
@@ -130,7 +240,7 @@ body.platform-darwin .app-dragbar {
   min-height: 0;
   padding: 38px 14px 18px;
   overflow: hidden;
-  background: rgba(251, 248, 253, 0.96);
+  background: var(--sidebar-surface);
   border: 0;
   border-right: 1px solid rgba(210, 197, 223, 0.45);
   border-radius: 0;
@@ -595,11 +705,11 @@ body.platform-darwin .app-dragbar {
 
 .button--primary {
   background: var(--primary);
-  color: #3e3152;
+  color: var(--primary-text);
 }
 
 .button--primary:hover {
-  background: #c6b0ee;
+  background: var(--primary-hover);
 }
 
 .button--secondary {
@@ -610,7 +720,7 @@ body.platform-darwin .app-dragbar {
 
 .button--secondary:hover {
   border-color: rgba(146, 121, 200, 0.28);
-  background: #f4edf8;
+  background: var(--interactive-hover);
 }
 
 .button--ghost {
@@ -710,7 +820,7 @@ body.platform-darwin .app-dragbar {
 .modal-card,
 .workspace-card {
   border: 1px solid rgba(210, 197, 223, 0.5);
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--surface-card);
   box-shadow: var(--shadow-soft);
 }
 
@@ -736,7 +846,7 @@ body.platform-darwin .app-dragbar {
   position: relative;
   overflow: hidden;
   border-radius: 14px;
-  background: #ebe2f8;
+  background: var(--surface-raised);
 }
 
 .workspace-focus__preview {
@@ -771,7 +881,30 @@ body.platform-darwin .app-dragbar {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: #ebe2f8;
+  background: var(--surface-raised);
+}
+
+.machine-visual__play-btn {
+  width: 64px;
+  height: 64px;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-strong);
+  color: var(--white);
+  box-shadow: 0 4px 12px rgba(146, 121, 200, 0.3);
+  transition: transform 200ms ease, background 200ms ease, box-shadow 200ms ease;
+}
+
+.machine-visual__play-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(146, 121, 200, 0.34);
+}
+
+.machine-visual__play-btn:active {
+  transform: translateY(0);
 }
 
 .workspace-focus__summary {
@@ -1086,7 +1219,7 @@ body.platform-darwin .app-dragbar {
 }
 
 .ios-toggle input:checked + .ios-toggle__track {
-  background: #6b4c8a;
+  background: var(--link-accent);
 }
 
 .ios-toggle__thumb {
@@ -1095,7 +1228,7 @@ body.platform-darwin .app-dragbar {
   left: 2px;
   width: 20px;
   height: 20px;
-  background: #fff;
+  background: var(--toggle-thumb);
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   transition: transform 200ms var(--ease-standard);
@@ -1123,7 +1256,7 @@ textarea {
   padding: 10px 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--input-surface);
   color: var(--text);
   font-size: 0.88rem;
   transition: border-color 140ms var(--ease-standard), box-shadow 140ms var(--ease-standard);
@@ -1167,7 +1300,7 @@ textarea:focus {
 }
 
 .material-select__anchor:hover {
-  background: #f3ebfa;
+  background: var(--interactive-hover);
 }
 
 .material-select__anchor:focus-visible,
@@ -1200,7 +1333,7 @@ textarea:focus {
   padding: 8px;
   border: 1px solid rgba(210, 197, 223, 0.68);
   border-radius: 20px;
-  background: #fffbff;
+  background: var(--input-surface-strong);
   box-shadow:
     0 18px 42px rgba(89, 70, 118, 0.16),
     0 4px 12px rgba(89, 70, 118, 0.08);
@@ -1246,7 +1379,7 @@ textarea:focus {
 }
 
 .material-select__option--selected {
-  color: #4f3d68;
+  color: var(--link-accent);
 }
 
 .material-select__check {
@@ -1263,7 +1396,7 @@ textarea:focus {
   padding: 14px;
   border: 1px solid rgba(210, 197, 223, 0.6);
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--interactive-surface);
   box-shadow: 0 2px 6px rgba(89, 70, 118, 0.03);
   text-align: left;
   transition: transform 160ms var(--ease-standard), border-color 160ms var(--ease-standard), box-shadow 160ms var(--ease-standard);
@@ -1283,7 +1416,7 @@ textarea:focus {
   padding: 16px;
   border: 1px solid rgba(210, 197, 223, 0.6);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--interactive-surface);
   box-shadow: 0 2px 6px rgba(89, 70, 118, 0.03);
   text-align: left;
   cursor: pointer;
@@ -1362,7 +1495,7 @@ textarea:focus {
   height: 16px;
   border-radius: 50%;
   background: var(--primary-strong);
-  color: #fff;
+  color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1382,7 +1515,7 @@ textarea:focus {
   overflow: hidden;
   border: 1px solid rgba(210, 197, 223, 0.82);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--surface-card);
   box-shadow: var(--shadow-soft);
   transition:
     border-color 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -1392,7 +1525,7 @@ textarea:focus {
 
 .settings-drawer--active {
   border-color: rgba(146, 121, 200, 0.58);
-  background: rgba(255, 255, 255, 0.99);
+  background: var(--surface-card-strong);
   box-shadow: var(--shadow-panel);
 }
 
@@ -1502,7 +1635,7 @@ textarea:focus {
   padding: 14px;
   border: 1px solid rgba(210, 197, 223, 0.62);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--surface-card);
 }
 
 .disk-item__actions,
@@ -1624,7 +1757,7 @@ textarea:focus {
   padding: 18px;
   border: 1px solid rgba(169, 58, 85, 0.2);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--surface-card);
 }
 
 .danger-zone strong {
@@ -1727,7 +1860,7 @@ textarea:focus {
 .console-screen__viewport {
   position: relative;
   min-height: 540px;
-  background: #201b2a;
+  background: var(--console-surface-alt);
   overflow: hidden;
 }
 
@@ -1758,7 +1891,7 @@ textarea:focus {
   transform: translate(-50%, -50%);
   max-width: 360px;
   text-align: center;
-  color: #f5f1ff;
+  color: var(--console-text);
 }
 
 .console-message strong {
@@ -1770,13 +1903,13 @@ textarea:focus {
 
 .console-message p {
   margin: 0;
-  color: rgba(245, 241, 255, 0.72);
+  color: var(--console-text-muted);
 }
 
 .novnc-viewport {
   position: absolute;
   inset: 0;
-  background: #1c1724;
+  background: var(--console-surface);
   overflow: hidden;
 }
 
@@ -1808,7 +1941,7 @@ textarea:focus {
   gap: 8px;
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(23, 18, 30, 0.78);
+  background: var(--console-overlay);
   color: rgba(245, 241, 255, 0.86);
   font-size: 0.76rem;
   backdrop-filter: blur(12px);
@@ -1833,7 +1966,7 @@ textarea:focus {
   height: 100%;
   gap: 0;
   overflow: hidden;
-  background: #1c1724;
+  background: var(--console-surface);
   /* Console page is fullscreen immersive, no border radius */
   border-radius: 0;
   width: 100%;
@@ -2088,20 +2221,24 @@ body.platform-darwin .page--console .console-viewport {
 .console-state__label {
   font-size: 0.88rem;
   font-weight: 500;
-  color: rgba(245, 241, 255, 0.4);
+  color: var(--console-text-faint);
   margin: 0;
 }
 
 .console-state__text {
   font-size: 0.88rem;
   font-weight: 500;
-  color: rgba(245, 241, 255, 0.68);
+  color: var(--console-text-subtle);
   margin: 0;
+}
+
+.console-state__text--error {
+  color: var(--console-error-text);
 }
 
 .console-state__hint {
   font-size: 0.74rem;
-  color: rgba(245, 241, 255, 0.35);
+  color: var(--console-hint);
   margin: 0;
   max-width: 320px;
 }
@@ -2116,7 +2253,7 @@ body.platform-darwin .page--console .console-viewport {
 }
 
 .console-state__error-icon {
-  color: rgba(255, 155, 155, 0.7);
+  color: var(--console-error-soft);
 }
 
 /* --- start button (centered play) --- */
@@ -2341,6 +2478,89 @@ body.platform-darwin .page--console .console-viewport {
   place-items: center;
   color: var(--muted);
   animation: page-enter 300ms var(--ease-standard);
+}
+
+.runtime-detail-card {
+  margin: 0 0 24px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--overlay-soft-strong);
+  background: var(--overlay-soft);
+  text-align: left;
+}
+
+.runtime-detail-card__label {
+  margin: 0 0 6px 0;
+  color: var(--overlay-soft-text-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.runtime-detail-card__body {
+  color: var(--overlay-soft-text);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.warning-banner {
+  margin-bottom: 16px;
+  padding: 8px 14px;
+  border: 1px solid var(--warning-border);
+  border-radius: 8px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 0.84rem;
+}
+
+.warning-banner--details {
+  margin-bottom: 20px;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+}
+
+.warning-banner__hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.settings-runtime-list {
+  display: grid;
+  gap: 8px;
+}
+
+.settings-runtime-entry {
+  padding-top: 8px;
+  border-top: 1px solid rgba(86, 63, 116, 0.08);
+}
+
+.settings-runtime-copy {
+  margin: 4px 0 0;
+  opacity: 0.8;
+}
+
+.settings-runtime-copy--path {
+  word-break: break-all;
+}
+
+.social-icons {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.social-icons__button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--primary-strong);
+  transition: color 200ms ease;
+}
+
+.social-icons__button:hover {
+  color: #9b7cb8;
 }
 
 @keyframes page-enter {
@@ -2587,7 +2807,7 @@ textarea.code-textarea {
   padding: 10px 14px;
   border: 1px solid rgba(210, 197, 223, 0.45);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--interactive-surface);
   transition: border-color 140ms var(--ease-standard);
 }
 .disk-item:hover {
@@ -2741,7 +2961,7 @@ textarea.code-textarea {
   position: absolute;
   top: 3px;
   bottom: 3px;
-  background: #ffffff;
+  background: var(--interactive-surface);
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(89, 70, 118, 0.08);
   transition: left 250ms cubic-bezier(0.34, 1.56, 0.64, 1), width 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -2807,6 +3027,12 @@ body.platform-darwin .app-sidebar {
   -webkit-backdrop-filter: blur(5px);
   border-right: 1px solid rgba(210, 197, 223, 0.3) !important;
   box-shadow: none !important;
+}
+
+html[data-theme="dark"] body.platform-darwin .app-sidebar {
+  background: var(--sidebar-surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 body.platform-darwin .app-shell__content {
   background: var(--bg) !important;
@@ -2967,7 +3193,7 @@ body.platform-darwin .app-shell__content {
 }
 
 .context-menu {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface-floating);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(210, 197, 223, 0.5);
@@ -2979,6 +3205,12 @@ body.platform-darwin .app-shell__content {
   flex-direction: column;
   gap: 2px;
   animation: context-menu-in 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+html[data-theme="dark"] .context-menu {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
 @keyframes context-menu-in {
@@ -3189,7 +3421,7 @@ body.platform-darwin .app-shell__content {
   padding-right: 36px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--input-surface);
   color: var(--text);
   font-size: 0.88rem;
   cursor: pointer;
@@ -3307,7 +3539,7 @@ body.platform-darwin .app-shell__content {
   height: 20px;
   border: 1.5px solid var(--line);
   border-radius: 4px;
-  background: #fff;
+  background: var(--input-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3325,7 +3557,7 @@ body.platform-darwin .app-shell__content {
 }
 
 .disk-image-manager__checkbox-box svg {
-  color: #fff;
+  color: var(--white);
   stroke: currentColor;
   stroke-width: 2.5;
   stroke-linecap: square;
@@ -3366,7 +3598,7 @@ body.platform-darwin .app-shell__content {
   height: 20px;
   border: 1.5px solid var(--line);
   border-radius: 4px;
-  background: #fff;
+  background: var(--input-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3384,7 +3616,7 @@ body.platform-darwin .app-shell__content {
 }
 
 .custom-checkbox__box svg {
-  color: #fff;
+  color: var(--white);
   stroke: currentColor;
   stroke-width: 2.5;
   stroke-linecap: square;
@@ -3741,7 +3973,7 @@ body.platform-darwin .app-shell__content {
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--input-surface);
   font-size: 0.88rem;
   color: var(--text);
 }
@@ -3826,7 +4058,7 @@ body.platform-darwin .app-shell__content {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #e8e0f0;
+  background: var(--about-surface);
   z-index: 2000;
   opacity: 0;
   pointer-events: none;
@@ -3846,7 +4078,7 @@ body.platform-darwin .app-shell__content {
   }
   to {
     clip-path: circle(160vmax at var(--click-x, 50%) var(--click-y, 50%));
-    background-color: rgba(232, 224, 240, 1);
+    background-color: var(--about-sweep);
   }
 }
 
@@ -3896,7 +4128,7 @@ body.platform-darwin .app-shell__content {
 @keyframes aboutShrink {
   from {
     clip-path: circle(160vmax at var(--click-x, 50%) var(--click-y, 50%));
-    background-color: rgba(232, 224, 240, 1);
+    background-color: var(--about-sweep);
   }
   to {
     clip-path: circle(24px at var(--click-x, 50%) var(--click-y, 50%));
@@ -3917,7 +4149,7 @@ body.platform-darwin .app-shell__content {
 .about-page__title {
   font-size: 48px;
   font-weight: 300;
-  color: #3D2A4F;
+  color: var(--about-text);
   margin: 0;
   letter-spacing: 2px;
   text-align: center;
@@ -3926,7 +4158,7 @@ body.platform-darwin .app-shell__content {
 .about-page__subtitle {
   font-size: 16px;
   font-weight: 300;
-  color: #6B4C8A;
+  color: var(--about-text-muted);
   margin: -16px 0 0 0;
   letter-spacing: 1px;
   text-align: center;
@@ -3952,7 +4184,7 @@ body.platform-darwin .app-shell__content {
   border: none;
   border-radius: 50%;
   background: rgba(61, 42, 79, 0.1);
-  color: #3D2A4F;
+  color: var(--about-text);
   cursor: pointer;
   z-index: 2;
   transition: background 200ms ease, transform 200ms ease;
@@ -3996,7 +4228,7 @@ body.platform-darwin .app-shell__content {
 
 .about-dialog-backdrop--visible {
   opacity: 1;
-  background: rgba(30, 26, 35, 0.65);
+  background: var(--surface-overlay);
   backdrop-filter: blur(8px);
   pointer-events: auto;
 }
@@ -4025,7 +4257,7 @@ body.platform-darwin .app-shell__content {
 }
 
 .export-dialog--purple {
-  background: #E8E0F0;
+  background: var(--panel-soft);
   padding: 0;
   width: min(100%, 560px);
   max-height: 90vh;
@@ -4065,7 +4297,7 @@ body.platform-darwin .app-shell__content {
 
 /* Info Card */
 .export-dialog__info-card {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--surface-floating-muted);
   border-radius: var(--radius-md);
   padding: 14px 16px;
   margin-bottom: 20px;
@@ -4117,7 +4349,7 @@ body.platform-darwin .app-shell__content {
   align-items: flex-start;
   gap: 10px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--surface-floating-muted);
   border-radius: var(--radius-md);
   border: 1px solid rgba(61, 42, 79, 0.08);
   cursor: pointer;
@@ -4126,7 +4358,7 @@ body.platform-darwin .app-shell__content {
 }
 
 .export-dialog__option:hover {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--surface-floating-soft);
   border-color: rgba(61, 42, 79, 0.15);
 }
 
@@ -4152,7 +4384,7 @@ body.platform-darwin .app-shell__content {
 .export-dialog__disks {
   margin-top: 12px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--surface-floating-muted);
   border-radius: var(--radius-md);
 }
 
@@ -4192,7 +4424,7 @@ body.platform-darwin .app-shell__content {
 
 /* 已勾选状态 - 白色 */
 .export-dialog__disk-item--checked {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface-floating);
   border-color: rgba(61, 42, 79, 0.12);
 }
 
@@ -4356,7 +4588,7 @@ body.platform-darwin .app-shell__content {
 
 .export-dialog__progress-operation {
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--surface-floating-muted);
   border-radius: var(--radius-md);
   text-align: center;
   font-size: 13px;
@@ -4532,7 +4764,7 @@ body.platform-darwin .app-shell__content {
   padding: 8px 12px;
   border: 1px solid rgba(61, 42, 79, 0.12);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--surface-floating-muted);
   color: var(--text-secondary);
   font-size: 13px;
   cursor: pointer;
@@ -4540,13 +4772,13 @@ body.platform-darwin .app-shell__content {
 }
 
 .shared-folder__mode-btn:hover {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--surface-floating-soft);
   border-color: rgba(61, 42, 79, 0.2);
 }
 
 .shared-folder__mode-btn--active {
   background: var(--primary);
-  color: #fff;
+  color: var(--white);
   border-color: var(--primary);
 }
 
@@ -4712,7 +4944,7 @@ body.platform-darwin .app-shell__content {
   padding: 8px 16px;
   border-radius: var(--radius-md);
   background: rgba(107, 76, 138, 0.08);
-  color: #6B4C8A;
+  color: var(--link-accent);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
@@ -4722,7 +4954,7 @@ body.platform-darwin .app-shell__content {
 
 .about-dialog__link:hover {
   background: rgba(107, 76, 138, 0.16);
-  color: #9B7CB8;
+  color: var(--link-accent-hover);
 }
 
 .about-dialog__link svg {
@@ -4739,7 +4971,7 @@ body.platform-darwin .app-shell__content {
   left: 50%;
   transform: translateX(-50%) translateY(20px);
   background: rgba(30, 26, 35, 0.92);
-  color: #fff;
+  color: var(--white);
   padding: 12px 24px;
   border-radius: var(--radius-md);
   font-size: 0.88rem;
@@ -4921,7 +5153,7 @@ body.platform-darwin .app-shell__content {
 
 .debug-command-panel__copy-btn:hover {
   background: rgba(107, 76, 138, 0.08);
-  color: #6B4C8A;
+  color: var(--link-accent);
   border-color: rgba(107, 76, 138, 0.2);
 }
 
@@ -4932,7 +5164,7 @@ body.platform-darwin .app-shell__content {
   margin: 0;
   padding: 10px;
   border-radius: var(--radius-sm);
-  background: rgba(30, 26, 35, 0.04);
+  background: var(--code-surface);
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.76rem;
   line-height: 1.5;
@@ -4942,8 +5174,8 @@ body.platform-darwin .app-shell__content {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 4px;
-  background: rgba(107, 76, 138, 0.08);
-  color: #6B4C8A;
+  background: var(--code-chip);
+  color: var(--link-accent);
   word-break: break-all;
 }
 
@@ -4951,7 +5183,7 @@ body.platform-darwin .app-shell__content {
   margin: 0;
   padding: 10px;
   border-radius: var(--radius-sm);
-  background: rgba(30, 26, 35, 0.04);
+  background: var(--code-surface);
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.76rem;
   line-height: 1.5;
@@ -5152,7 +5384,7 @@ body.platform-darwin .app-shell__content {
   padding: 10px 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--panel);
   color: var(--text);
   font-size: 0.88rem;
   transition: border-color 140ms var(--ease-standard), box-shadow 140ms var(--ease-standard);
@@ -5197,7 +5429,7 @@ body.platform-darwin .app-shell__content {
   overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--panel);
 }
 
 .export-disk-item {
@@ -5250,4 +5482,78 @@ body.platform-darwin .app-shell__content {
 .export-btn-secondary:hover {
   border-color: rgba(146, 121, 200, 0.28);
   background: #f4edf8;
+}
+
+/* --- theme toggle --- */
+.theme-toggle {
+  display: inline-flex;
+  gap: 8px;
+  padding: 4px;
+  background: var(--panel-muted);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+}
+
+.theme-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.theme-toggle__btn:hover {
+  background: var(--overlay-soft);
+  color: var(--text);
+}
+
+.theme-toggle__btn--active {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Sidebar theme toggle */
+.sidebar-theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px;
+  margin-bottom: 10px;
+  background: var(--panel-muted);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+}
+
+.sidebar-theme-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.sidebar-theme-toggle__btn:hover {
+  background: var(--overlay-soft);
+  color: var(--text);
+}
+
+.sidebar-theme-toggle__btn--active {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: var(--shadow-soft);
 }

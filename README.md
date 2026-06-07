@@ -8,7 +8,7 @@
 
 ![License: MIT](https://img.shields.io/badge/License-GPL2-yellow.svg)
 [![Platform](https://img.shields.io/badge/OS-macOS%2FWindows%2FLinux-blue)](https://github.com/steve372a/pier)
-[![Version](https://img.shields.io/badge/version-0.0.1(beta)-brightgreen)]()
+[![Version](https://img.shields.io/badge/version-0.0.2(beta)-brightgreen)]()
 [![Stars](https://img.shields.io/github/stars/steve372a/sanaka?style=social)]()
 
 <img src="https://github.com/steve372a/steve372a/blob/d24cd56bc94603d110d073b61457ceec23c531af/diandianmagic.png" alt="diandianearth.png" width="100">

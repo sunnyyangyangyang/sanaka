@@ -25,26 +25,13 @@ const socialLinks = [
 
 export const SocialIcons: React.FC<SocialIconsProps> = ({ onIconClick }) => {
   return (
-    <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+    <div className="social-icons">
       {socialLinks.map(({ name, url, Icon }) => (
         <button
+          className="social-icons__button"
           key={name}
           onClick={() => onIconClick(url)}
           title={name}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: 0,
-            cursor: 'pointer',
-            color: '#6B4C8A',
-            transition: 'color 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#9B7CB8';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = '#6B4C8A';
-          }}
         >
           <Icon size={32} />
         </button>

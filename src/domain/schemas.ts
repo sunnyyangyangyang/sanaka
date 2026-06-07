@@ -21,6 +21,7 @@ export const templateCatalogEntrySchema = z.object({
 
 export const appSettingsSchema = z.object({
   language: languageSchema,
+  theme: z.enum(['light', 'dark']).default('light'),
   defaultSaveDirectory: z.string(),
   runtimeDefaults: z.object({
     displayFrontend: displayFrontendSchema,

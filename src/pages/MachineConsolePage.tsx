@@ -413,7 +413,7 @@ export function MachineConsolePage() {
             <div className="console-state__error-icon">
               <AlertIcon />
             </div>
-            <p className="console-state__text" style={{ color: 'rgba(255, 160, 160, 0.9)' }}>
+            <p className="console-state__text console-state__text--error">
               {t('console.startFailed')}
             </p>
             <p className="console-state__hint">{runtimeState?.lastError}</p>

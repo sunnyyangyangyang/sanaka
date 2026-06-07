@@ -73,20 +73,6 @@ export function MachineVisual({
               onPlayClick();
             }}
             title={isRunning ? "进入控制台" : "启动虚拟机"}
-            style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '50%',
-              background: 'var(--primary-strong)',
-              color: '#ffffff',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(146, 121, 200, 0.3)',
-              transition: 'transform 200ms ease, background 200ms ease',
-            }}
           >
             {isRunning ? (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '28px', height: '28px' }}>

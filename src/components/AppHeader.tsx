@@ -9,6 +9,26 @@ import { useT } from '../hooks/useT';
 import { ExportMachineDialog } from './ExportMachineDialog';
 import logoUrl from '../../assets/icons/fish.png';
 
+const SunIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/>
+    <line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
+
 interface SidebarIconProps {
   name: 'plus' | 'machine' | 'home' | 'settings' | 'about';
 }
@@ -71,6 +91,7 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
     draft,
     recents,
     settings,
+    setTheme,
     openAboutDialog,
     renameMachine,
     duplicateMachine,
@@ -308,6 +329,26 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
         <div className="workspace-sidebar__spacer" />
 
         <div className="workspace-sidebar__section workspace-sidebar__section--footer">
+          <div className="sidebar-theme-toggle">
+            <button
+              className={settings.theme === 'light' ? 'sidebar-theme-toggle__btn sidebar-theme-toggle__btn--active' : 'sidebar-theme-toggle__btn'}
+              type="button"
+              aria-label={t('settings.light')}
+              title={t('settings.light')}
+              onClick={() => void setTheme('light')}
+            >
+              <SunIcon />
+            </button>
+            <button
+              className={settings.theme === 'dark' ? 'sidebar-theme-toggle__btn sidebar-theme-toggle__btn--active' : 'sidebar-theme-toggle__btn'}
+              type="button"
+              aria-label={t('settings.dark')}
+              title={t('settings.dark')}
+              onClick={() => void setTheme('dark')}
+            >
+              <MoonIcon />
+            </button>
+          </div>
           <nav className="workspace-sidebar__utilities" aria-label="Application utilities">
             <button className={utilityClass(location.pathname === '/')} type="button" aria-label={t('home.sidebarHome')} title={t('home.sidebarHome')} onClick={() => navigate('/')}>
               <span className="workspace-sidebar__icon">

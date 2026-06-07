@@ -194,20 +194,11 @@ export function RoutedShell() {
               {activeStartError?.description}
             </p>
             {activeStartError?.detail && (
-              <div
-                style={{
-                  margin: '0 0 24px 0',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  background: 'rgba(117, 99, 148, 0.08)',
-                  border: '1px solid rgba(117, 99, 148, 0.16)',
-                  textAlign: 'left'
-                }}
-              >
-                <div style={{ fontSize: '0.76rem', fontWeight: 600, color: 'rgba(74, 55, 98, 0.72)', marginBottom: '6px' }}>
+              <div className="runtime-detail-card">
+                <div className="runtime-detail-card__label">
                   QEMU / Runtime
                 </div>
-                <div style={{ fontSize: '0.8rem', lineHeight: '1.5', color: 'rgba(74, 55, 98, 0.88)', wordBreak: 'break-word' }}>
+                <div className="runtime-detail-card__body">
                   {activeStartError?.detail}
                 </div>
               </div>

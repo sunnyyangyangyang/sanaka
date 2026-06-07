@@ -16,6 +16,26 @@ const GlobeIcon = () => (
   </svg>
 );
 
+const SunIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/>
+    <line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
+
 const FolderIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -118,7 +138,7 @@ function SettingsDrawerSection({
 }
 
 export function SettingsPage() {
-  const { appMeta, settings, persistSettings, importTemplateFromDialog, templates, updateTemplateCatalog, updateCurrentInfo, checkForUpdates, runtimeEnvironment } = useAppStore();
+  const { appMeta, settings, persistSettings, setTheme, importTemplateFromDialog, templates, updateTemplateCatalog, updateCurrentInfo, checkForUpdates, runtimeEnvironment } = useAppStore();
   const t = useT();
   const [params, setParams] = useSearchParams();
   const initialTab = params.get('tab');
@@ -255,6 +275,27 @@ export function SettingsPage() {
               {tab === 'general' ? (
                 <SectionCard title={t('settings.tabs.general')} description={t('settings.generalDescription')} icon={<GlobeIcon />}>
               <MaterialSelectField label={t('settings.language')} value={settings.language} options={languageOptions} onChange={(nextValue) => void patchSettings({ language: nextValue })} />
+              <div className="field">
+                <span className="field__label">{t('settings.theme')}</span>
+                <div className="theme-toggle">
+                  <button
+                    className={settings.theme === 'light' ? 'theme-toggle__btn theme-toggle__btn--active' : 'theme-toggle__btn'}
+                    type="button"
+                    onClick={() => void setTheme('light')}
+                  >
+                    <SunIcon />
+                    <span>{t('settings.light')}</span>
+                  </button>
+                  <button
+                    className={settings.theme === 'dark' ? 'theme-toggle__btn theme-toggle__btn--active' : 'theme-toggle__btn'}
+                    type="button"
+                    onClick={() => void setTheme('dark')}
+                  >
+                    <MoonIcon />
+                    <span>{t('settings.dark')}</span>
+                  </button>
+                </div>
+              </div>
                 </SectionCard>
               ) : null}
 
@@ -297,19 +338,19 @@ export function SettingsPage() {
                     : 'Loading runtime environment...'}
                 </p>
                 {runtimeEnvironment ? (
-                  <div style={{ display: 'grid', gap: '8px' }}>
+                  <div className="settings-runtime-list">
                     {Object.entries(runtimeEnvironment.binaries).map(([key, binary]) => (
-                      <div key={key} style={{ borderTop: '1px solid rgba(86, 63, 116, 0.08)', paddingTop: '8px' }}>
+                      <div key={key} className="settings-runtime-entry">
                         <strong>{binary.name}</strong>
-                        <p style={{ margin: '4px 0 0' }}>{binary.version || 'Version unavailable'}</p>
-                        <p style={{ margin: '4px 0 0', wordBreak: 'break-all', opacity: 0.8 }}>{binary.path || 'Not found'}</p>
+                        <p className="settings-runtime-copy">{binary.version || 'Version unavailable'}</p>
+                        <p className="settings-runtime-copy settings-runtime-copy--path">{binary.path || 'Not found'}</p>
                       </div>
                     ))}
                     {runtimeEnvironment.searchRoots?.length ? (
-                      <div style={{ borderTop: '1px solid rgba(86, 63, 116, 0.08)', paddingTop: '8px' }}>
+                      <div className="settings-runtime-entry">
                         <strong>Search Roots</strong>
                         {runtimeEnvironment.searchRoots.map((root) => (
-                          <p key={root} style={{ margin: '4px 0 0', wordBreak: 'break-all', opacity: 0.8 }}>
+                          <p key={root} className="settings-runtime-copy settings-runtime-copy--path">
                             {root}
                           </p>
                         ))}

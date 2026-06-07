@@ -167,6 +167,7 @@ interface AppStoreValue {
   templates: TemplateCatalogEntry[];
   initialize: () => Promise<void>;
   setLanguage: (language: AppSettings['language']) => Promise<void>;
+  setTheme: (theme: AppSettings['theme']) => Promise<void>;
   setAboutOpen: (open: boolean) => void;
   createDraftFromTemplateKey: (templateKey: string) => Promise<void>;
   applyTemplateSelection: (templateKey: string) => Promise<void>;
@@ -306,6 +307,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     setRuntimeMachines(machines);
     setUpdateCurrentInfo(updaterInfo);
     document.body.classList.toggle('platform-darwin', meta.platform === 'darwin');
+    document.documentElement.setAttribute('data-theme', nextSettings.theme);
     setReady(true);
   }, []);
 
@@ -430,6 +432,14 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const setLanguage = useCallback(
     async (language: AppSettings['language']) => {
       await persistSettings({ ...settings, language });
+    },
+    [persistSettings, settings]
+  );
+
+  const setTheme = useCallback(
+    async (theme: AppSettings['theme']) => {
+      document.documentElement.setAttribute('data-theme', theme);
+      await persistSettings({ ...settings, theme });
     },
     [persistSettings, settings]
   );
@@ -1026,6 +1036,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       templates: [...settings.templateCatalog].sort((a, b) => a.order - b.order),
       initialize,
       setLanguage,
+      setTheme,
       setAboutOpen,
       createDraftFromTemplateKey,
       applyTemplateSelection,
@@ -1078,6 +1089,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       recents,
       saveDraft,
       setLanguage,
+      setTheme,
       settings,
       updateDraft,
       updateTemplateCatalog,

@@ -3,6 +3,7 @@ import { defaultTemplateCatalog } from './templates';
 
 export const defaultSettings: AppSettings = {
   language: 'zh-CN',
+  theme: 'light',
   defaultSaveDirectory: '',
   runtimeDefaults: {
     displayFrontend: 'sanaka',

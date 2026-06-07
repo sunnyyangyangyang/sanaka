@@ -193,7 +193,7 @@ export function NoVncViewport({
     rfb.viewOnly = false;
     rfb.scaleViewport = scaleMode === 'fit';
     rfb.resizeSession = false;
-    rfb.background = '#1c1724';
+    rfb.background = getComputedStyle(document.documentElement).getPropertyValue('--console-surface').trim() || '#1c1724';
     rfb.clipViewport = false;
     rfb.qualityLevel = 6;
     rfb.compressionLevel = 2;

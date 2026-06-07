@@ -279,6 +279,9 @@ export const resources = {
         update: '更新'
       },
       language: '界面语言',
+      theme: '主题',
+      light: '浅色',
+      dark: '深夜',
       savePath: '默认机器目录',
       frontend: '默认显示前端',
       backend: '默认显示协议',
@@ -752,6 +755,9 @@ export const resources = {
         update: 'Update'
       },
       language: 'Language',
+      theme: 'Theme',
+      light: 'Light',
+      dark: 'Dark',
       savePath: 'Default Machine Location',
       frontend: 'Default Display Frontend',
       backend: 'Default Display Protocol',

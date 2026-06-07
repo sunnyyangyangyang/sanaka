@@ -2,6 +2,7 @@ const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const path = require('node:path');
+const packageJson = require('../package.json');
 
 function pushIfString(target, value) {
   if (typeof value === 'string' && value.trim()) {
@@ -123,6 +124,8 @@ exports.default = async function afterPack(context) {
   }
 
   const plistPath = path.join(context.appOutDir, 'Sanaka.app', 'Contents', 'Info.plist');
+  const packageVersion = String(packageJson.version || '0.0.0').trim();
+  const bundleVersion = packageVersion.replace(/-.*$/, '') || packageVersion;
 
   const setPlistValue = (key, type, value) => {
     try {
@@ -141,8 +144,8 @@ exports.default = async function afterPack(context) {
     }
   };
 
-  setPlistValue('CFBundleShortVersionString', 'string', '0.0.1 (beta)');
-  setPlistValue('CFBundleVersion', 'string', '0.0.1');
+  setPlistValue('CFBundleShortVersionString', 'string', packageVersion);
+  setPlistValue('CFBundleVersion', 'string', bundleVersion);
   setPlistValue('NSHumanReadableCopyright', 'string', 'Copyright © 2026 Sanakaprix');
   setDocumentTypeValue(0, 'LSTypeIsPackage', 'bool', 'true');
 }

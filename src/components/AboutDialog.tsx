@@ -1,5 +1,6 @@
 import { useT } from '../hooks/useT';
 import { usePresence } from '../hooks/usePresence';
+import { useAppStore } from '../store/AppStore';
 import logoUrl from '../../assets/icons/fish.png';
 
 interface AboutDialogProps {
@@ -10,6 +11,7 @@ interface AboutDialogProps {
 export function AboutDialog({ open, onClose }: AboutDialogProps) {
   const t = useT();
   const { mounted, visible } = usePresence(open);
+  const { appMeta } = useAppStore();
 
   if (!mounted) return null;
 
@@ -43,7 +45,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           <h2 id="about-title" className="about-dialog__title">{t('app.about')}</h2>
           <p className="about-dialog__description">{t('app.aboutDescription')}</p>
           <p className="about-dialog__footer">{t('app.aboutFooter')}</p>
-          <p className="about-dialog__version">0.0.1 (beta)</p>
+          <p className="about-dialog__version">{appMeta?.version ?? '0.0.2-beta'}</p>
           <a
             href="https://github.com/steve372a/sanaka"
             className="about-dialog__link"

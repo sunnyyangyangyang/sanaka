@@ -406,7 +406,7 @@ function createWindow() {
     height,
     minWidth,
     minHeight,
-    backgroundColor: process.platform === 'darwin' ? '#00000000' : '#f4f0fb',
+    backgroundColor: process.platform === 'darwin' ? '#00000000' : '#f7f3fa',
     vibrancy: process.platform === 'darwin' ? 'sidebar' : undefined,
     visualEffectState: process.platform === 'darwin' ? 'active' : undefined,
     icon: appIcon || APP_ICON_PATH,
