@@ -205,39 +205,39 @@ apply_action_choice() {
   local choice="$1"
   case "$choice" in
     1)
-      ACTION_ID="doctor"
+      ACTION_ID="doctor-auto"
       ACTION_LABEL="$(sanaka_t "start.menu_1")"
-      ACTION_COMMAND=(bash "$ROOT_DIR/scripts/doctor.sh")
+      ACTION_COMMAND=(bash "$ROOT_DIR/scripts/doctor.sh" --auto)
       ACTION_QEMU_PLATFORM=""
       ACTION_RUN_DOCTOR_FIRST="false"
       return 0
       ;;
     2)
-      ACTION_ID="start"
+      ACTION_ID="doctor"
       ACTION_LABEL="$(sanaka_t "start.menu_2")"
-      ACTION_COMMAND=(npm start)
+      ACTION_COMMAND=(bash "$ROOT_DIR/scripts/doctor.sh")
       ACTION_QEMU_PLATFORM=""
       ACTION_RUN_DOCTOR_FIRST="false"
       return 0
       ;;
     3)
-      ACTION_ID="build"
+      ACTION_ID="start"
       ACTION_LABEL="$(sanaka_t "start.menu_3")"
-      ACTION_COMMAND=(npm run build)
+      ACTION_COMMAND=(npm start)
       ACTION_QEMU_PLATFORM=""
       ACTION_RUN_DOCTOR_FIRST="false"
       return 0
       ;;
     4)
-      ACTION_ID="pack-mac-app"
+      ACTION_ID="build"
       ACTION_LABEL="$(sanaka_t "start.menu_4")"
-      ACTION_COMMAND=()
-      ACTION_QEMU_PLATFORM="macos"
+      ACTION_COMMAND=(npm run build)
+      ACTION_QEMU_PLATFORM=""
       ACTION_RUN_DOCTOR_FIRST="false"
       return 0
       ;;
     5)
-      ACTION_ID="pack-mac-dmg"
+      ACTION_ID="pack-mac-app"
       ACTION_LABEL="$(sanaka_t "start.menu_5")"
       ACTION_COMMAND=()
       ACTION_QEMU_PLATFORM="macos"
@@ -245,30 +245,38 @@ apply_action_choice() {
       return 0
       ;;
     6)
-      ACTION_ID="pack-win-dir"
+      ACTION_ID="pack-mac-dmg"
       ACTION_LABEL="$(sanaka_t "start.menu_6")"
+      ACTION_COMMAND=()
+      ACTION_QEMU_PLATFORM="macos"
+      ACTION_RUN_DOCTOR_FIRST="false"
+      return 0
+      ;;
+    7)
+      ACTION_ID="pack-win-dir"
+      ACTION_LABEL="$(sanaka_t "start.menu_7")"
       ACTION_COMMAND=()
       ACTION_QEMU_PLATFORM="windows"
       ACTION_RUN_DOCTOR_FIRST="false"
       return 0
       ;;
-    7)
+    8)
       ACTION_ID="pack-win-installer"
-      ACTION_LABEL="$(sanaka_t "start.menu_7")"
+      ACTION_LABEL="$(sanaka_t "start.menu_8")"
       ACTION_COMMAND=(npm run pack:win)
       ACTION_QEMU_PLATFORM=""
       ACTION_RUN_DOCTOR_FIRST="false"
       return 0
       ;;
-    8)
+    9)
       ACTION_ID="pack-linux"
-      ACTION_LABEL="$(sanaka_t "start.menu_8")"
+      ACTION_LABEL="$(sanaka_t "start.menu_9")"
       ACTION_COMMAND=(npm run pack:linux)
       ACTION_QEMU_PLATFORM=""
       ACTION_RUN_DOCTOR_FIRST="true"
       return 0
       ;;
-    9)
+    10)
       sanaka_log "common.exit"
       exit 0
       ;;
@@ -292,6 +300,7 @@ choose_action() {
         "7" "$(sanaka_t "start.menu_7")" \
         "8" "$(sanaka_t "start.menu_8")" \
         "9" "$(sanaka_t "start.menu_9")" \
+        "10" "$(sanaka_t "start.menu_10")" \
         "L" "$(sanaka_t "start.menu_lang")")" || exit 0
       case "$choice" in
         L|l)
@@ -316,6 +325,7 @@ choose_action() {
       sanaka_printf_ln "start.menu_7"
       sanaka_printf_ln "start.menu_8"
       sanaka_printf_ln "start.menu_9"
+      sanaka_printf_ln "start.menu_10"
       sanaka_printf "start.menu_prompt"
       read -r choice || exit 0
       case "$choice" in
