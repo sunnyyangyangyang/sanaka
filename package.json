@@ -117,6 +117,7 @@
     "deb": {
       "packageCategory": "utils",
       "priority": "optional",
+      "afterInstall": "build/deb-after-install.sh",
       "depends": [
         "libgtk-3-0",
         "libnotify4",
@@ -127,9 +128,7 @@
         "libatspi2.0-0",
         "libuuid1",
         "libsecret-1-0",
-        "qemu-system-x86",
-        "qemu-system-arm",
-        "qemu-system-misc",
+        "qemu-system",
         "qemu-utils"
       ],
       "recommends": [
