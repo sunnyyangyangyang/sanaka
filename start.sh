@@ -265,7 +265,7 @@ apply_action_choice() {
       ACTION_LABEL="$(sanaka_t "start.menu_8")"
       ACTION_COMMAND=(npm run pack:linux)
       ACTION_QEMU_PLATFORM=""
-      ACTION_RUN_DOCTOR_FIRST="false"
+      ACTION_RUN_DOCTOR_FIRST="true"
       return 0
       ;;
     9)

@@ -14,6 +14,7 @@ MENU_MODE="false"
 
 NPM_REGISTRY=""
 ELECTRON_MIRROR_URL=""
+BUILDER_BINARIES_MIRROR_URL=""
 CURRENT_ELECTRON_VERSION=""
 declare -a DOCTOR_ISSUES=()
 declare -a DOCTOR_FIXES=()
@@ -29,6 +30,12 @@ ELECTRON_CANDIDATES=(
   "https://github.com/electron/electron/releases/download/"
   "https://npmmirror.com/mirrors/electron/"
   "https://mirrors.huaweicloud.com/electron/"
+)
+
+BUILDER_BINARIES_CANDIDATES=(
+  "https://github.com/electron-userland/electron-builder-binaries/releases/download/"
+  "https://cdn.npmmirror.com/binaries/electron-builder-binaries/"
+  "https://mirrors.huaweicloud.com/electron-builder-binaries/"
 )
 
 for arg in "$@"; do
@@ -146,6 +153,11 @@ read_current_config() {
   if [[ -z "$ELECTRON_MIRROR_URL" ]]; then
     ELECTRON_MIRROR_URL="$(read_user_npmrc_key "electron_mirror")"
   fi
+
+  BUILDER_BINARIES_MIRROR_URL="${ELECTRON_BUILDER_BINARIES_MIRROR:-}"
+  if [[ -z "$BUILDER_BINARIES_MIRROR_URL" ]]; then
+    BUILDER_BINARIES_MIRROR_URL="$(read_user_npmrc_key "electron_builder_binaries_mirror")"
+  fi
 }
 
 read_user_npmrc_key() {
@@ -189,6 +201,7 @@ print_current_config() {
   sanaka_section "doctor.current_mirror_config"
   sanaka_log "doctor.registry_value" "${NPM_REGISTRY:-$(sanaka_t "doctor.unset")}"
   sanaka_log "doctor.electron_mirror_value" "${ELECTRON_MIRROR_URL:-$(sanaka_t "doctor.unset")}"
+  sanaka_log "doctor.builder_binaries_mirror_value" "${BUILDER_BINARIES_MIRROR_URL:-$(sanaka_t "doctor.unset")}"
   if [[ -n "$CURRENT_ELECTRON_VERSION" ]]; then
     sanaka_log "doctor.electron_version_value" "$CURRENT_ELECTRON_VERSION"
   fi
@@ -244,6 +257,13 @@ probe_electron_mirror() {
   probe_url_time "${normalized}${CURRENT_ELECTRON_VERSION}/SHASUMS256.txt"
 }
 
+probe_builder_binaries_mirror() {
+  local base_url="$1"
+  local normalized
+  normalized="$(normalize_with_trailing_slash "$base_url")"
+  probe_url_time "${normalized}fpm@2.1.4/fpm-1.17.0-ruby-3.4.3-linux-amd64.7z"
+}
+
 pick_fastest_mirror() {
   local mode="$1"
   shift
@@ -262,8 +282,15 @@ pick_fastest_mirror() {
         sanaka_printf_ln "doctor.testing_failed" >&2
         continue
       fi
-    else
+    elif [[ "$mode" == "electron" ]]; then
       if seconds="$(probe_electron_mirror "$url")"; then
+        printf '%ss\n' "$seconds" >&2
+      else
+        sanaka_printf_ln "doctor.testing_failed" >&2
+        continue
+      fi
+    else
+      if seconds="$(probe_builder_binaries_mirror "$url")"; then
         printf '%ss\n' "$seconds" >&2
       else
         sanaka_printf_ln "doctor.testing_failed" >&2
@@ -285,13 +312,17 @@ pick_fastest_mirror() {
 apply_mirrors() {
   local npm_registry="$1"
   local electron_mirror="$2"
+  local builder_binaries_mirror="$3"
 
   sanaka_section "doctor.writing_mirrors"
   npm config set registry "$(trim_trailing_slash "$npm_registry")"
   write_user_npmrc_key "electron_mirror" "$(normalize_with_trailing_slash "$electron_mirror")"
+  write_user_npmrc_key "electron_builder_binaries_mirror" "$(normalize_with_trailing_slash "$builder_binaries_mirror")"
   export ELECTRON_MIRROR="$(normalize_with_trailing_slash "$electron_mirror")"
+  export ELECTRON_BUILDER_BINARIES_MIRROR="$(normalize_with_trailing_slash "$builder_binaries_mirror")"
   sanaka_log "doctor.set_npm_registry" "$(trim_trailing_slash "$npm_registry")"
   sanaka_log "doctor.set_electron_mirror" "$(normalize_with_trailing_slash "$electron_mirror")"
+  sanaka_log "doctor.set_builder_binaries_mirror" "$(normalize_with_trailing_slash "$builder_binaries_mirror")"
 }
 
 confirm() {
@@ -310,8 +341,8 @@ confirm() {
 }
 
 test_and_offer_best_mirrors() {
-  local npm_result electron_result
-  local best_npm best_npm_time best_electron best_electron_time
+  local npm_result electron_result builder_result
+  local best_npm best_npm_time best_electron best_electron_time best_builder best_builder_time
 
   sanaka_section "doctor.testing_npm"
   npm_result="$(pick_fastest_mirror "npm" "${NPM_CANDIDATES[@]}" || true)"
@@ -331,17 +362,27 @@ test_and_offer_best_mirrors() {
   best_electron="${electron_result%%|*}"
   best_electron_time="${electron_result#*|}"
 
+  sanaka_section "doctor.testing_builder_binaries"
+  builder_result="$(pick_fastest_mirror "builder" "${BUILDER_BINARIES_CANDIDATES[@]}" || true)"
+  if [[ -z "$builder_result" ]]; then
+    sanaka_log "doctor.no_builder_binaries_mirror"
+    return 1
+  fi
+  best_builder="${builder_result%%|*}"
+  best_builder_time="${builder_result#*|}"
+
   sanaka_section "doctor.testing_result"
   sanaka_log "doctor.fastest_npm" "$best_npm" "$best_npm_time"
   sanaka_log "doctor.fastest_electron" "$best_electron" "$best_electron_time"
+  sanaka_log "doctor.fastest_builder_binaries" "$best_builder" "$best_builder_time"
 
   if [[ "$AUTO_MODE" == "true" ]]; then
-    apply_mirrors "$best_npm" "$best_electron"
+    apply_mirrors "$best_npm" "$best_electron" "$best_builder"
     return 0
   fi
 
   if confirm "$(sanaka_t "doctor.switch_prompt")"; then
-    apply_mirrors "$best_npm" "$best_electron"
+    apply_mirrors "$best_npm" "$best_electron" "$best_builder"
   else
     sanaka_log "doctor.switch_cancelled"
   fi
