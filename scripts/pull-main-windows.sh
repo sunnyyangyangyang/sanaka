@@ -2,29 +2,5 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT_DIR"
-
-echo "当前目录: $ROOT_DIR"
-
-if ! command -v git >/dev/null 2>&1; then
-  echo "没找到 git。请先安装 Git for Windows。"
-  exit 1
-fi
-
-if ! command -v npm >/dev/null 2>&1; then
-  echo "没找到 npm。请先安装 Node.js。"
-  exit 1
-fi
-
-echo "拉取远程最新代码..."
-git fetch origin
-git reset --hard origin/main
-
-echo "安装/修复依赖..."
-npm install
-
-echo "构建检查..."
-npm run build
-
-echo "完成。现在可以运行: npm start"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+exec "$SCRIPT_DIR/pull-main.sh" "$@"

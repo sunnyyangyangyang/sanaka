@@ -63,6 +63,27 @@
         "dir"
       ]
     },
+    "dmg": {
+      "background": "build/dmg.png",
+      "iconSize": 100,
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
+        {
+          "x": 130,
+          "y": 190,
+          "type": "file"
+        },
+        {
+          "x": 410,
+          "y": 190,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
     "win": {
       "icon": "assets/icons/sanakafish.png",
       "fileAssociations": [
@@ -85,9 +106,37 @@
     "linux": {
       "icon": "assets/icons/sanakafish.png",
       "target": [
-        "AppImage"
+        "deb"
       ],
-      "category": "Utility"
+      "category": "Utility",
+      "maintainer": "Sanakaprix",
+      "synopsis": "Sanaka virtual machine frontend",
+      "description": "Sanaka is an Electron-based QEMU virtual machine frontend with built-in noVNC console integration.",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "deb": {
+      "packageCategory": "utils",
+      "priority": "optional",
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0",
+        "qemu-system-x86",
+        "qemu-system-arm",
+        "qemu-system-misc",
+        "qemu-utils"
+      ],
+      "recommends": [
+        "ovmf",
+        "qemu-block-extra",
+        "samba"
+      ]
     }
   },
   "dependencies": {
