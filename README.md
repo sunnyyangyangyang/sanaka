@@ -21,14 +21,27 @@
 | --- | --- | --- |
 | 支持 macOS/Linux/Windows | 通过 Electron 实现界面统一 | 内置 noVNC 并突破声音传输限制
 
+## 支持系统
+
+| macOS | Windows | Linux |
+| --- | --- | --- |
+| 至少 macOS Monterey 12 | 至少 Windows 10 | 建议 QEMU 版本 >= 8.2.0 |
+
 ## 🚀 快速上手
 
 前往 [Releases](https://github.com/steve372a/sanaka/releases) 下载最新版适合您系统的包。
+
+**Linux 版本需要安装以下依赖：**
+
+```
+sudo apt install qemu-system qemu-utils ovmf qemu-block-extra
+```
 
 ## 📦 源码构建
 
 参见 [从零开始的构建指南](./从零开始的构建指南.md)
 
+我为您提供了快速工具！
 您可以在本地快速上手：
 
 ```
@@ -36,6 +49,20 @@ git clone https://github.com/steve372a/sanaka.git
 cd sanaka
 bash start.sh
 ```
+
+<div align="center">
+<img src="./assets/pictures/startsh-linux.png" >
+</div>
+
+**从源码打包全流程（macOS）：**
+
+* 创建一个目录
+* 输入 `git clone https://github.com/steve372a/sanaka.git` 
+* `cd sanaka`进入目录，然后输入`bash start.sh`：
+
+![](./assets/pictures/startsh-macos.png)
+
+* 选择第一步，Sanaka 将为你自动配置好 Sanaka 需要的环境，包括 npm install 等。
 
 ## 📚 文档入口
 
