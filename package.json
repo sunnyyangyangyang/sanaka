@@ -5,7 +5,7 @@
   "description": "Sanaka desktop frontend",
   "main": "main.js",
   "scripts": {
-    "start": "npm run build && electron .",
+    "start": "npm run build && node ./scripts/start-electron.js",
     "build": "tsc --noEmit && vite build",
     "dev:ui": "vite",
     "typecheck": "tsc --noEmit",
