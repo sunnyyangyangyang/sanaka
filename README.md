@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="./assets/icons/fish.png" width="200">
+
 # Sanaka
 
 精致 QEMU 虚拟机管理软件前端
@@ -8,6 +10,8 @@
 [![Platform](https://img.shields.io/badge/OS-macOS%2FWindows%2FLinux-blue)](https://github.com/steve372a/pier)
 [![Version](https://img.shields.io/badge/version-0.0.1(beta)-brightgreen)]()
 [![Stars](https://img.shields.io/github/stars/steve372a/sanaka?style=social)]()
+
+<img src="https://github.com/steve372a/steve372a/blob/d24cd56bc94603d110d073b61457ceec23c531af/diandianmagic.png" alt="diandianearth.png" width="100">
 
 </div>
 
