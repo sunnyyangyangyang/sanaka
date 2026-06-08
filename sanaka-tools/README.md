@@ -29,6 +29,34 @@
 - 已提供 NSIS 安装器脚本
 - Windows 侧可自动搜索整机的 `MinGW32` 和 `NSIS`
 - 已带托盘菜单：状态、端口、退出
+- 已加入 Linux 工具镜像骨架（`sanaka-tools/linux/`）
+
+## Linux 工具镜像骨架
+
+当前仓库已加入 Linux 增强功能镜像源目录：
+
+```text
+sanaka-tools/linux/
+```
+
+目前已提供：
+
+- `install.sh`
+- `uninstall.sh`
+- `README.txt`
+- `bin/sanaka-clipboard`
+- `bin/start.sh`
+- `share/*.desktop`
+- `config/sanaka-clipboard.ini`
+
+说明：
+
+- 当前 Linux 版已带一个原生 C 客户端实现
+- 图形剪贴板优先尝试 `wl-paste/wl-copy`、`xclip`、`xsel`
+- 已能生成 `iso/sanaka-tools-linux.iso`
+- 如果客户机没有图形剪贴板服务，程序仍会常驻，但同步能力会受限
+- Linux 原生构建：`sh sanaka-tools/linux/build.sh`
+- macOS 上可尝试：`sh sanaka-tools/linux/build-podman.sh`
 
 ## 本地构建
 

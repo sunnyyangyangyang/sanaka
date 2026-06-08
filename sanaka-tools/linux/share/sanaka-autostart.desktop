@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Sanaka
+Comment=Sanaka shared clipboard preview service
+Exec=__SANAKA_START__
+Terminal=false
+X-GNOME-Autostart-enabled=true

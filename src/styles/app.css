@@ -2222,7 +2222,7 @@ body.platform-darwin .page--console .console-viewport {
 .console-dropdown__submenu-panel {
   position: absolute;
   top: 0;
-  left: calc(100% + 6px);
+  right: calc(100% + 6px);
   min-width: 180px;
   padding: 6px;
   background: rgba(36, 30, 46, 0.95);
