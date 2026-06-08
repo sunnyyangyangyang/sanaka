@@ -19,3 +19,4 @@ Sanaka Linux 增强功能镜像
    - 也可以手动指定目标架构：`SANAKA_TARGET_ARCH=amd64 sh build.sh`
    - 也可以手动指定目标架构：`SANAKA_TARGET_ARCH=aarch64 sh build.sh`
    - Debian / Ubuntu / WSL 下如果缺交叉编译器，会自动尝试安装
+7. 现在的 Linux 客户机程序已经能走 bootstrap / bridge 协议，但真实可用性仍依赖客户机内是否存在图形剪贴板命令。

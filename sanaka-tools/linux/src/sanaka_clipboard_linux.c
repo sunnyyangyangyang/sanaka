@@ -53,6 +53,16 @@ typedef struct SanakaStateTag {
 static SanakaState g_state;
 static volatile sig_atomic_t g_should_exit = 0;
 
+static void sanaka_sleep_ms(long milliseconds) {
+  struct timespec request;
+  if (milliseconds <= 0) {
+    return;
+  }
+  request.tv_sec = milliseconds / 1000L;
+  request.tv_nsec = (milliseconds % 1000L) * 1000000L;
+  nanosleep(&request, NULL);
+}
+
 static long sanaka_now_ms(void) {
   struct timespec ts;
   if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
@@ -102,8 +112,13 @@ static void sanaka_prepare_paths(SanakaState *state) {
   if (state == NULL || home == NULL) {
     return;
   }
-  snprintf(state->runtime_dir, sizeof(state->runtime_dir), "%s/.local/share/sanaka-tools", home);
-  snprintf(state->log_path, sizeof(state->log_path), "%s/logs/sanaka-clipboard.log", state->runtime_dir);
+  if (snprintf(state->runtime_dir, sizeof(state->runtime_dir), "%s/.local/share/sanaka-tools", home) >= (int) sizeof(state->runtime_dir)) {
+    state->runtime_dir[0] = '\0';
+    return;
+  }
+  if (snprintf(state->log_path, sizeof(state->log_path), "%s/logs/sanaka-clipboard.log", state->runtime_dir) >= (int) sizeof(state->log_path)) {
+    state->log_path[0] = '\0';
+  }
 }
 
 static void sanaka_ensure_parent_dirs(const char *file_path) {
@@ -314,10 +329,16 @@ static int sanaka_load_config(SanakaConfig *config) {
   config->machine_mac[0] = '\0';
   config->protocol_version = SANAKA_PROTOCOL_VERSION;
 
-  snprintf(path, sizeof(path), "%s/config/sanaka-clipboard.ini", g_state.runtime_dir);
+  if (snprintf(path, sizeof(path), "%s/config/sanaka-clipboard.ini", g_state.runtime_dir) >= (int) sizeof(path)) {
+    sanaka_log_line("config path too long");
+    return 0;
+  }
   file = fopen(path, "r");
   if (file == NULL) {
-    snprintf(path, sizeof(path), "%s/../config/sanaka-clipboard.ini", g_state.runtime_dir);
+    if (snprintf(path, sizeof(path), "%s/../config/sanaka-clipboard.ini", g_state.runtime_dir) >= (int) sizeof(path)) {
+      sanaka_log_line("fallback config path too long");
+      return 0;
+    }
     file = fopen(path, "r");
   }
   if (file == NULL) {
@@ -667,7 +688,7 @@ int main(void) {
       }
       sanaka_send_heartbeat_if_needed(&g_state, now_ms);
     }
-    usleep(100 * 1000);
+    sanaka_sleep_ms(100);
   }
 
   sanaka_disconnect(&g_state);
