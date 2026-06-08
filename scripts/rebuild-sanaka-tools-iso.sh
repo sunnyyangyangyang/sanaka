@@ -4,9 +4,12 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 REPO_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
-TARGET_ISO="$REPO_DIR/sanaka-tools.iso"
+ISO_DIR="$REPO_DIR/iso"
+TARGET_ISO="$ISO_DIR/sanaka-tools.iso"
 
 printf '%s\n' "当前目录: $REPO_DIR"
+
+mkdir -p "$ISO_DIR"
 
 if [ -f "$TARGET_ISO" ]; then
   printf '%s\n' "删除旧的 sanaka-tools.iso ..."
@@ -23,27 +26,33 @@ const { SanakaToolsService } = require(path.join(process.cwd(), 'runtime/SanakaT
 
 async function main() {
   const repoDir = process.cwd();
-  const outputPath = path.join(repoDir, 'sanaka-tools.iso');
+  const outputDir = path.join(repoDir, 'iso');
+  const outputPath = path.join(outputDir, 'sanaka-tools.iso');
   const tmpRoot = path.join(repoDir, '.tmp-sanaka-tools-userdata');
+  await fs.mkdir(outputDir, { recursive: true });
 
   const isoService = new IsoImageService({ platform: process.platform });
-  const service = new SanakaToolsService({
-    app: {
-      getPath(name) {
-        if (name === 'userData') {
-          return tmpRoot;
-        }
-        return repoDir;
-      },
-      getAppPath() {
-        return repoDir;
-      }
-    },
-    isoService
-  });
+  const workspace = await isoService.createTemporaryWorkspace('sanaka-tools-src-');
+  try {
+    const binDir = path.join(workspace, 'bin');
+    const configDir = path.join(workspace, 'config');
+    await fs.mkdir(binDir, { recursive: true });
+    await fs.mkdir(configDir, { recursive: true });
 
-  const generatedPath = await service.ensureBundledIso();
-  await fs.copyFile(generatedPath, outputPath);
+    await fs.writeFile(path.join(workspace, 'autorun.inf'), '[autorun]\nopen=setup.exe\nlabel=Sanaka Tools\n', 'utf8');
+    await fs.copyFile(path.join(repoDir, 'sanaka-tools', 'README.md'), path.join(workspace, 'readme.txt'));
+    await fs.copyFile(path.join(repoDir, 'sanaka-tools', 'dist', 'setup.exe'), path.join(workspace, 'setup.exe'));
+    await fs.copyFile(path.join(repoDir, 'sanaka-tools', 'config', 'sanaka-clipboard.ini'), path.join(configDir, 'sanaka-clipboard.ini'));
+    await fs.copyFile(path.join(repoDir, 'sanaka-tools', 'dist', 'sanaka_clipboard.exe'), path.join(binDir, 'sanaka_clipboard.exe'));
+    await isoService.createFromDirectory({
+      sourceDirectory: workspace,
+      outputPath,
+      volumeLabel: 'SANAKA_TOOLS'
+    });
+  } finally {
+    await fs.rm(workspace, { recursive: true, force: true }).catch(() => undefined);
+    await fs.rm(tmpRoot, { recursive: true, force: true }).catch(() => undefined);
+  }
   console.log(outputPath);
 }
 

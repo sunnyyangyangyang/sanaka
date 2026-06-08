@@ -218,8 +218,7 @@ class RuntimeManager {
       platform: this.platform
     });
     this.sanakaToolsService = options.sanakaToolsService || new SanakaToolsService({
-      app: this.app,
-      isoService: this.isoService
+      app: this.app
     });
     this.clipboardBootstrapService = options.clipboardBootstrapService || new ClipboardBootstrapService({
       port: options.clipboardBootstrapPort || DEFAULT_BOOTSTRAP_PORT,
@@ -739,17 +738,18 @@ class RuntimeManager {
   async mountBundledTestNetIso(machineId) {
     const candidates = [];
     if (typeof this.app?.getAppPath === 'function') {
-      candidates.push(path.join(this.app.getAppPath(), 'testnet.iso'));
+      candidates.push(path.join(this.app.getAppPath(), 'iso', 'testnet.iso'));
     }
     if (typeof process.resourcesPath === 'string' && process.resourcesPath.length > 0) {
-      candidates.push(path.join(process.resourcesPath, 'testnet.iso'));
+      candidates.push(path.join(process.resourcesPath, 'iso', 'testnet.iso'));
     }
+    candidates.push(path.join(process.cwd(), 'iso', 'testnet.iso'));
 
     const isoPath = await this.#resolveFirstExistingPath(candidates);
     if (!isoPath) {
       return {
         ok: false,
-        error: 'Bundled testnet.iso was not found.',
+        error: 'Bundled testnet ISO was not found: iso/testnet.iso.',
         state: this.#serializeState(this.registry.get(machineId))
       };
     }

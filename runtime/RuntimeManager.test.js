@@ -380,7 +380,7 @@ arch = "x86_64"
   it('mounts the bundled testnet iso from the app root when available', async () => {
     const { manager } = createManager();
     const accessSpy = vi.spyOn(fsPromises, 'access').mockImplementation(async (targetPath) => {
-      if (String(targetPath) === '/tmp/sanaka-app/testnet.iso') {
+      if (String(targetPath) === '/tmp/sanaka-app/iso/testnet.iso') {
         return undefined;
       }
       throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
@@ -390,7 +390,7 @@ arch = "x86_64"
     const result = await manager.mountBundledTestNetIso('vm-testnet');
 
     expect(result.ok).toBe(true);
-    expect(changeMediaSpy).toHaveBeenCalledWith('vm-testnet', '/tmp/sanaka-app/testnet.iso', 'cdrom');
+    expect(changeMediaSpy).toHaveBeenCalledWith('vm-testnet', '/tmp/sanaka-app/iso/testnet.iso', 'cdrom');
 
     accessSpy.mockRestore();
   });
@@ -398,7 +398,7 @@ arch = "x86_64"
   it('mounts the bundled Sanaka tools iso from the app root when available', async () => {
     const { manager } = createManager({
       sanakaToolsService: {
-        ensureBundledIso: vi.fn(async () => '/tmp/sanaka-app/sanaka-tools.iso')
+        ensureBundledIso: vi.fn(async () => '/tmp/sanaka-app/iso/sanaka-tools.iso')
       }
     });
     const changeMediaSpy = vi.spyOn(manager, 'changeMedia').mockResolvedValue({ ok: true, state: null });
@@ -406,7 +406,7 @@ arch = "x86_64"
     const result = await manager.mountSanakaToolsIso('vm-tools');
 
     expect(result.ok).toBe(true);
-    expect(changeMediaSpy).toHaveBeenCalledWith('vm-tools', '/tmp/sanaka-app/sanaka-tools.iso', 'cdrom');
+    expect(changeMediaSpy).toHaveBeenCalledWith('vm-tools', '/tmp/sanaka-app/iso/sanaka-tools.iso', 'cdrom');
   });
 
   it('waits for a stopping machine to exit before reporting already running', async () => {
