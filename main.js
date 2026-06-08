@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, nativeImage, screen, shell } = require('electron');
+const { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, nativeImage, screen, shell } = require('electron');
 const fs = require('fs/promises');
 const path = require('path');
 const { parse: parseToml, stringify: stringifyToml } = require('smol-toml');
@@ -132,6 +132,14 @@ function normalizeSharedFolderConfig(config = {}) {
     hostPath: String(config.hostPath || ''),
     mode: config.mode === 'readonly' ? 'readonly' : 'readwrite',
     shareName: 'qemu'
+  };
+}
+
+function normalizeClipboardBridgeConfig(config = {}) {
+  return {
+    enabled: Boolean(config.enabled),
+    mode: 'text',
+    autoConnect: config.autoConnect !== false
   };
 }
 
@@ -501,7 +509,9 @@ function getRuntimeManager() {
   if (!runtimeManager) {
     runtimeManager = new RuntimeManager({
       app,
-      emitEvent: emitRuntimeEvent
+      emitEvent: emitRuntimeEvent,
+      readClipboardText: () => clipboard.readText(),
+      writeClipboardText: (text) => clipboard.writeText(String(text || ''))
     });
   }
   return runtimeManager;
@@ -780,6 +790,9 @@ const ipcHandlers = {
   async mountBundledTestNetIso(_event, machineId) {
     return getRuntimeManager().mountBundledTestNetIso(machineId);
   },
+  async mountSanakaToolsIso(_event, machineId) {
+    return getRuntimeManager().mountSanakaToolsIso(machineId);
+  },
   async getMachineState(_event, machineId) {
     return getRuntimeManager().getMachineState(machineId);
   },
@@ -793,6 +806,9 @@ const ipcHandlers = {
       pendingRestart: false,
       state: null
     };
+  },
+  async updateClipboardBridge(_event, machinePath, config) {
+    return getRuntimeManager().updateClipboardBridge(machinePath, normalizeClipboardBridgeConfig(config));
   },
   async exportMachine(_event, options) {
     return getExportService().exportMachine(options || {});
@@ -894,9 +910,11 @@ app.whenReady().then(() => {
   ipcMain.handle('runtime:reset-machine', ipcHandlers.resetMachine);
   ipcMain.handle('runtime:change-media', ipcHandlers.changeMedia);
   ipcMain.handle('runtime:mount-bundled-testnet-iso', ipcHandlers.mountBundledTestNetIso);
+  ipcMain.handle('runtime:mount-sanaka-tools-iso', ipcHandlers.mountSanakaToolsIso);
   ipcMain.handle('runtime:get-machine-state', ipcHandlers.getMachineState);
   ipcMain.handle('runtime:list-running-machines', ipcHandlers.listRunningMachines);
   ipcMain.handle('machine:update-shared-folder', ipcHandlers.updateSharedFolder);
+  ipcMain.handle('machine:update-clipboard-bridge', ipcHandlers.updateClipboardBridge);
   ipcMain.handle('machine:export', ipcHandlers.exportMachine);
   ipcMain.handle('machine:cancel-export', ipcHandlers.cancelExport);
 });

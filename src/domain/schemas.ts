@@ -8,6 +8,7 @@ export const diskStorageModeSchema = z.enum(['managed', 'external']);
 export const diskSizeUnitSchema = z.enum(['MB', 'GB']);
 export const diskInterfaceSchema = z.enum(['ide', 'scsi', 'sata', 'virtio']);
 export const sharedFolderModeSchema = z.enum(['readonly', 'readwrite']);
+export const clipboardBridgeModeSchema = z.enum(['text']);
 
 export const templateCatalogEntrySchema = z.object({
   key: z.string(),
@@ -21,7 +22,7 @@ export const templateCatalogEntrySchema = z.object({
 
 export const appSettingsSchema = z.object({
   language: languageSchema,
-  theme: z.enum(['light', 'dark']).default('light'),
+  theme: z.enum(['light', 'dark', 'system']).default('system'),
   defaultSaveDirectory: z.string(),
   runtimeDefaults: z.object({
     displayFrontend: displayFrontendSchema,
@@ -123,6 +124,19 @@ export const sakaMachineSchema = z.object({
     mode: sharedFolderModeSchema.default('readwrite'),
     shareName: z.string().default('qemu')
   }),
+  integration: z.object({
+    clipboard: z.object({
+      enabled: z.boolean().default(false),
+      mode: clipboardBridgeModeSchema.default('text'),
+      autoConnect: z.boolean().default(true)
+    })
+  }).default({
+    clipboard: {
+      enabled: false,
+      mode: 'text',
+      autoConnect: true
+    }
+  }),
   display: z.object({
     frontend: displayFrontendSchema,
     gpu: z.string(),
@@ -177,6 +191,13 @@ export const sakaTemplateSchema = z.object({
     mode: 'readwrite',
     shareName: 'qemu'
   }),
+  integration: sakaMachineSchema.shape.integration.optional().default({
+    clipboard: {
+      enabled: false,
+      mode: 'text',
+      autoConnect: true
+    }
+  }),
   display: sakaMachineSchema.shape.display,
   peripherals: sakaMachineSchema.shape.peripherals.optional().default({ usb_tablet: true }),
   advanced: sakaMachineSchema.shape.advanced.optional().default({ audio_backend: 'auto', qemu_args: '' })
@@ -209,6 +230,7 @@ export type DiskStorageMode = z.infer<typeof diskStorageModeSchema>;
 export type DiskSizeUnit = z.infer<typeof diskSizeUnitSchema>;
 export type DiskInterface = z.infer<typeof diskInterfaceSchema>;
 export type SharedFolderMode = z.infer<typeof sharedFolderModeSchema>;
+export type ClipboardBridgeMode = z.infer<typeof clipboardBridgeModeSchema>;
 export type AppSettings = z.infer<typeof appSettingsSchema>;
 export type TemplateCatalogEntry = z.infer<typeof templateCatalogEntrySchema>;
 export type RecentEntry = z.infer<typeof recentEntrySchema>;

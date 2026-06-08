@@ -356,6 +356,25 @@ export function MachineConsolePage() {
                 >
                   {t('console.testNetWindows')}
                 </button>
+                <button
+                  className="console-dropdown__item"
+                  type="button"
+                  role="menuitem"
+                  onClick={async () => {
+                    setMenuOpen(false);
+                    if (!runtimeMachineId) return;
+                    const result = await window.electronAPI.runtime.mountSanakaToolsIso!(runtimeMachineId);
+                    if (!result.ok) {
+                      setStartError({
+                        title: t('console.mountToolsErrorTitle'),
+                        description: t('console.mountToolsErrorDesc'),
+                        detail: result.error || undefined
+                      });
+                    }
+                  }}
+                >
+                  {t('console.installSanakaTools')}
+                </button>
               </div>
             )}
           </div>

@@ -58,12 +58,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     resetMachine: (payload) => ipcRenderer.invoke('runtime:reset-machine', payload),
     changeMedia: (payload) => ipcRenderer.invoke('runtime:change-media', payload),
     mountBundledTestNetIso: (machineId) => ipcRenderer.invoke('runtime:mount-bundled-testnet-iso', machineId),
+    mountSanakaToolsIso: (machineId) => ipcRenderer.invoke('runtime:mount-sanaka-tools-iso', machineId),
     getMachineState: (machineId) => ipcRenderer.invoke('runtime:get-machine-state', machineId),
     listRunningMachines: () => ipcRenderer.invoke('runtime:list-running-machines'),
     onRuntimeEvent: (handler) => on('runtime:event', handler)
   },
   machine: {
     updateSharedFolder: (machinePath, config) => ipcRenderer.invoke('machine:update-shared-folder', machinePath, config),
+    updateClipboardBridge: (machinePath, config) => ipcRenderer.invoke('machine:update-clipboard-bridge', machinePath, config),
     exportMachine: (options) => ipcRenderer.invoke('machine:export', options),
     cancelExport: (taskId) => ipcRenderer.invoke('machine:cancel-export', taskId),
     onExportProgress: (handler) => on('machine:export-progress', handler)

@@ -17,6 +17,7 @@ export type DiskImageFormat = 'qcow2' | 'qed' | 'qcow' | 'vmdk' | 'vpc' | 'vdi' 
 export type DiskSizeUnit = 'MB' | 'GB';
 export type DiskStorageMode = 'managed' | 'external';
 export type SharedFolderMode = 'readonly' | 'readwrite';
+export type ClipboardBridgeMode = 'text';
 
 export interface DiskImageInfo {
   path: string;
@@ -105,6 +106,12 @@ export interface SharedFolderConfig {
   shareName: string;
 }
 
+export interface ClipboardBridgeConfig {
+  enabled: boolean;
+  mode: ClipboardBridgeMode;
+  autoConnect: boolean;
+}
+
 export interface QemuBinaryAvailability {
   name: string;
   found: boolean;
@@ -160,6 +167,21 @@ export interface RuntimeSharedFolderState {
   installHint?: string | null;
 }
 
+export interface RuntimeClipboardBridgeState {
+  enabled: boolean;
+  active: boolean;
+  connected: boolean;
+  status: 'idle' | 'waiting' | 'connected' | 'error';
+  textOnly: true;
+  listenPort?: number;
+  sessionId?: string | null;
+  pendingGuestConnection?: boolean;
+  guestToolInstalledKnown?: boolean;
+  hostAddress?: string;
+  lastError?: string | null;
+  configPath?: string | null;
+}
+
 export interface RuntimeMachineState {
   machineId: string;
   bundlePath: string;
@@ -178,6 +200,7 @@ export interface RuntimeMachineState {
   exitCode: number | null;
   lastError: string | null;
   sharedFolder?: RuntimeSharedFolderState;
+  clipboardBridge?: RuntimeClipboardBridgeState;
 }
 
 export interface RuntimeCommandPreview {
@@ -207,6 +230,7 @@ export interface RuntimeEvent {
   type:
     | 'machine-starting'
     | 'machine-running'
+    | 'machine-updated'
     | 'machine-resetting'
     | 'machine-stopping'
     | 'machine-stopped'
@@ -351,12 +375,19 @@ export interface ElectronApi {
     resetMachine: (payload: ResetMachineRequest) => Promise<StopMachineResult>;
     changeMedia: (payload: ChangeMediaRequest) => Promise<StopMachineResult>;
     mountBundledTestNetIso?: (machineId: string) => Promise<StopMachineResult>;
+    mountSanakaToolsIso?: (machineId: string) => Promise<StopMachineResult>;
     getMachineState: (machineId: string) => Promise<RuntimeMachineState | null>;
     listRunningMachines: () => Promise<RuntimeMachineState[]>;
     onRuntimeEvent: (handler: (payload: RuntimeEvent) => void) => () => void;
   };
   machine: {
     updateSharedFolder?: (machinePath: string, config: SharedFolderConfig) => Promise<UpdateSharedFolderResult>;
+    updateClipboardBridge?: (machinePath: string, config: ClipboardBridgeConfig) => Promise<{
+      ok: boolean;
+      config?: ClipboardBridgeConfig;
+      state?: RuntimeMachineState | null;
+      error?: string;
+    }>;
     exportMachine: (options: ExportMachineOptions) => Promise<string>;
     cancelExport: (taskId: string) => Promise<boolean>;
     onExportProgress: (handler: (payload: ExportProgress) => void) => () => void;

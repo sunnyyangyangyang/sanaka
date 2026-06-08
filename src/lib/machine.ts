@@ -204,6 +204,7 @@ export function machineToTemplate(machine: SakaMachine): SakaTemplate {
     media: machine.media,
     network: machine.network,
     sharing: machine.sharing,
+    integration: machine.integration,
     display: machine.display,
     peripherals: machine.peripherals,
     advanced: machine.advanced

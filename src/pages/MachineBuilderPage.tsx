@@ -680,6 +680,27 @@ export function MachineBuilderPage() {
                   </span>
                 </label>
               </div>
+              <div className="form-row-align">
+                <span className="field__label">{t('builder.labels.clipboardSharing')}</span>
+                <label className="ios-toggle" aria-label={t('builder.labels.clipboardSharing')}>
+                  <input
+                    checked={machine.integration.clipboard.enabled}
+                    type="checkbox"
+                    aria-label={t('builder.labels.clipboardSharing')}
+                    onChange={(event) => updateDraft((current) => ({ ...current, integration: { ...current.integration, clipboard: { ...current.integration.clipboard, enabled: event.target.checked } } }))}
+                  />
+                  <span className="ios-toggle__track">
+                    <span className="ios-toggle__thumb" />
+                  </span>
+                </label>
+              </div>
+              {machine.integration.clipboard.enabled && (
+                <div className="info-panel" style={{ marginTop: '4px' }}>
+                  <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.5 }}>
+                    {t('builder.descriptions.clipboardSharingHint')}
+                  </p>
+                </div>
+              )}
             </div>
           </SectionCard>
 

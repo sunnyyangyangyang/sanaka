@@ -45,6 +45,8 @@ function createManager(overrides = {}) {
     detector,
     registry,
     builder: overrides.builder || { build: vi.fn() },
+    isoService: overrides.isoService,
+    sanakaToolsService: overrides.sanakaToolsService,
     platform: overrides.platform || 'darwin',
     arch: overrides.arch || 'arm64'
   });
@@ -81,6 +83,18 @@ describe('RuntimeManager', () => {
       logPath: '/tmp/runtime/qemu.log',
       exitCode: null,
       lastError: null,
+      clipboardBridge: {
+        enabled: true,
+        active: true,
+        connected: false,
+        status: 'waiting',
+        textOnly: true,
+        listenPort: 48123,
+        pendingGuestConnection: true,
+        guestToolInstalledKnown: false,
+        hostAddress: '10.0.2.2',
+        lastError: null
+      },
       process: { pid: 1234, kill: vi.fn() },
       qmpClient: { close: vi.fn() },
       machine: { id: 'vm-1' }
@@ -105,7 +119,19 @@ describe('RuntimeManager', () => {
         qmpTcpPort: 47001,
         logPath: '/tmp/runtime/qemu.log',
         exitCode: null,
-        lastError: null
+        lastError: null,
+        clipboardBridge: {
+          enabled: true,
+          active: true,
+          connected: false,
+          status: 'waiting',
+          textOnly: true,
+          listenPort: 48123,
+          pendingGuestConnection: true,
+          guestToolInstalledKnown: false,
+          hostAddress: '10.0.2.2',
+          lastError: null
+        }
       }
     ]);
     expect(result[0]).not.toHaveProperty('process');
@@ -357,6 +383,20 @@ arch = "x86_64"
     expect(changeMediaSpy).toHaveBeenCalledWith('vm-testnet', '/tmp/sanaka-app/testnet.iso', 'cdrom');
 
     accessSpy.mockRestore();
+  });
+
+  it('mounts the bundled Sanaka tools iso from the app root when available', async () => {
+    const { manager } = createManager({
+      sanakaToolsService: {
+        ensureBundledIso: vi.fn(async () => '/tmp/sanaka-app/sanaka-tools.iso')
+      }
+    });
+    const changeMediaSpy = vi.spyOn(manager, 'changeMedia').mockResolvedValue({ ok: true, state: null });
+
+    const result = await manager.mountSanakaToolsIso('vm-tools');
+
+    expect(result.ok).toBe(true);
+    expect(changeMediaSpy).toHaveBeenCalledWith('vm-tools', '/tmp/sanaka-app/sanaka-tools.iso', 'cdrom');
   });
 
   it('waits for a stopping machine to exit before reporting already running', async () => {

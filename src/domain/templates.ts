@@ -78,6 +78,13 @@ function makeBaseMachine(id: string, title: string): Omit<SakaMachine, 'template
       mode: 'readwrite',
       shareName: 'qemu'
     },
+    integration: {
+      clipboard: {
+        enabled: false,
+        mode: 'text',
+        autoConnect: true
+      }
+    },
     disks: [],
     advanced: {
       audio_backend: 'auto',
@@ -98,6 +105,7 @@ export const builtInTemplates: SakaTemplate[] = [
     media: { iso: '', floppy: '' },
     network: { enabled: true, mode: 'user', card: 'pcnet' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
+    integration: { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
       gpu: 'cirrus-vga',
@@ -119,6 +127,7 @@ export const builtInTemplates: SakaTemplate[] = [
     media: { iso: '', floppy: '' },
     network: { enabled: true, mode: 'user', card: 'rtl8139' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
+    integration: { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
       gpu: 'std',
@@ -140,6 +149,7 @@ export const builtInTemplates: SakaTemplate[] = [
     media: { iso: '', floppy: '' },
     network: { enabled: true, mode: 'user', card: 'rtl8139' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
+    integration: { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
       gpu: 'std',
@@ -161,6 +171,7 @@ export const builtInTemplates: SakaTemplate[] = [
     media: { iso: '', floppy: '' },
     network: { enabled: true, mode: 'user', card: 'virtio-net-pci' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
+    integration: { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
       gpu: 'virtio-vga',
@@ -182,6 +193,7 @@ export const builtInTemplates: SakaTemplate[] = [
     media: { iso: '', floppy: '' },
     network: { enabled: true, mode: 'user', card: 'virtio-net-pci' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
+    integration: { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
       gpu: 'virtio-vga',
@@ -224,6 +236,15 @@ export function createMachineFromTemplateDocument(template: SakaTemplate): SakaM
     sharing: template.sharing
       ? { ...template.sharing }
       : { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
+    integration: template.integration
+      ? {
+          clipboard: {
+            enabled: template.integration.clipboard?.enabled ?? false,
+            mode: template.integration.clipboard?.mode ?? 'text',
+            autoConnect: template.integration.clipboard?.autoConnect ?? true
+          }
+        }
+      : { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
     display: {
       ...template.display,
       frontend: 'sanaka',

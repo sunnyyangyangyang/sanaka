@@ -79,6 +79,7 @@ export const resources = {
         diskInterface: '磁盘总线',
         usbTablet: 'USB-tablet 鼠标',
         mouseAlignment: 'USB-tablet 鼠标',
+        clipboardSharing: '共享剪贴板',
         networkEnabled: '启用网络',
         networkMode: '网络模式',
         networkCard: '网卡类型',
@@ -96,6 +97,7 @@ export const resources = {
         boot: '选择启动顺序、镜像和磁盘。',
         hardware: '调整这台虚拟机的常用硬件选项。',
         experience: '优化虚拟机使用体验。',
+        clipboardSharingHint: '本功能需要安装 Sanaka 增强功能程序。请在虚拟机控制台的“更多”菜单中选择“安装 Sanaka 增强功能程序”。目前仅支持 Windows（XP 及以上），且当前仅支持文本剪贴板。',
         networkDisplay: '设置网络与显示方式。',
         advanced: '需要时可填写额外启动参数。',
         templateBuiltIn: '内建模板',
@@ -264,7 +266,10 @@ export const resources = {
       more: '更多',
       testNetWindows: '检测虚拟机网络 (Windows)',
       testNetErrorTitle: '网络检测失败',
-      testNetErrorDesc: '无法挂载网络检测镜像，请确认虚拟机正在运行。'
+      testNetErrorDesc: '无法挂载网络检测镜像，请确认虚拟机正在运行。',
+      installSanakaTools: '安装 Sanaka 增强功能程序',
+      mountToolsErrorTitle: '挂载工具镜像失败',
+      mountToolsErrorDesc: '无法挂载 Sanaka 增强功能工具镜像，请确认虚拟机正在运行。'
     },
     settings: {
       title: '设置',
@@ -555,6 +560,7 @@ export const resources = {
         diskInterface: 'Disk Bus',
         usbTablet: 'USB-tablet Mouse',
         mouseAlignment: 'USB-tablet Mouse',
+        clipboardSharing: 'Shared Clipboard',
         networkEnabled: 'Enable Network',
         networkMode: 'Network Mode',
         networkCard: 'Network Card',
@@ -572,6 +578,7 @@ export const resources = {
         boot: 'Choose boot order, media, and disks.',
         hardware: 'Adjust the common hardware options for this machine.',
         experience: 'Tune how the machine feels to use.',
+        clipboardSharingHint: 'This feature requires the Sanaka guest enhancement tools. In the VM console, open the "More" menu and select "Install Sanaka Guest Enhancements". Windows (XP and above) only. Text clipboard only in this version.',
         networkDisplay: 'Set networking and display behavior.',
         advanced: 'Add extra launch arguments when needed.',
         templateBuiltIn: 'Built-in template',
@@ -740,7 +747,10 @@ export const resources = {
       more: 'More',
       testNetWindows: 'Test VM Network (Windows)',
       testNetErrorTitle: 'Network Test Failed',
-      testNetErrorDesc: 'Could not mount the network test image. Make sure the VM is running.'
+      testNetErrorDesc: 'Could not mount the network test image. Make sure the VM is running.',
+      installSanakaTools: 'Install Sanaka Guest Enhancements',
+      mountToolsErrorTitle: 'Mount Tools Image Failed',
+      mountToolsErrorDesc: 'Could not mount the Sanaka guest enhancement tools image. Make sure the VM is running.'
     },
     settings: {
       title: 'Settings',

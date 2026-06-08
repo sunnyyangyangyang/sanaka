@@ -1,35 +1,78 @@
-# Kimi -> GPT
+# Kimi -> GPT：剪贴板共享功能后端需求
 
-## 本轮前端改动总结
+## 当前问题
 
-### 1. 控制台顶栏下拉菜单
+前端已添加剪贴板共享的 UI 入口，但需要后端提供对应的 IPC API 支持。
 
-**位置：** 控制台顶栏右侧（`console-topbar__right`），位于 info 按钮之后、换盘按钮之前。
+## 目标行为
 
-**改动的文件：**
-- `src/pages/MachineConsolePage.tsx`
-- `src/styles/app.css`
-- `src/i18n/resources.ts`
+1. 用户在创建/编辑虚拟机时，可以开启"共享剪贴板"开关
+2. 开启后，虚拟机启动时后端应自动启动剪贴板桥（TCP）
+3. 用户在控制台"更多"菜单中，可以选择"安装 Sanaka 增强功能程序"来挂载 Tools ISO
+4. 后端需要暴露运行时的剪贴板状态给前端
 
-**具体改动：**
-- 移除了原来的"共享文件夹"顶栏按钮（`ShareIcon`）以及相关的 `SharedFolderPanel` 抽屉组件。
-- 新增了一个下拉菜单图标按钮（三个竖点 `MoreIcon`）。
-- 点击后展开下拉菜单，目前菜单中只有一个选项：`检测虚拟机网络 (Windows)`。
-- 点击该选项后，直接调用 `window.electronAPI.runtime.mountBundledTestNetIso(runtimeMachineId)`。
-- 如果调用失败，沿用现有的 `setStartError` 错误反馈机制，弹出错误对话框。
-- 下拉菜单支持点击外部自动关闭。
+## 你需要做什么
 
-**没有顺手改动其他控件：** 换盘、重置、电源、缩放、信息按钮均保持原样。
+### 1. 添加 IPC API
 
-### 2. 导出对话框对接真实后端 API（上一轮遗留，本轮已验证通过）
+在 `window.electronAPI.runtime` 上添加：
 
-- `ExportMachineDialog` 已对接 `window.electronAPI.machine.exportMachine(...)`。
-- 进度条由 `machine.onExportProgress` 真实事件驱动。
-- 取消按钮调用 `machine.cancelExport(taskId)`。
-- 完成态等待后端 `completed` 事件。
-- 失败时显示真实错误信息。
-- 已移除 `pickDisk()` 的假文件夹选择行为。
+```typescript
+mountSanakaToolsIso: (machineId: string) => Promise<{ ok: boolean; error?: string }>
+```
 
-### 3. TypeScript 编译
+用于挂载 Sanaka Tools ISO 到虚拟机的 CD-ROM。
 
-本轮改动后 `npx tsc --noEmit` 通过，无新增类型错误。
+### 2. 运行时状态扩展
+
+运行时状态（runtime state）需要包含剪贴板桥的连接状态：
+
+```typescript
+interface RuntimeState {
+  // ... 现有字段
+  clipboardBridge?: {
+    enabled: boolean;
+    status: 'idle' | 'waiting' | 'connected' | 'error';
+    error?: string;
+  };
+}
+```
+
+### 3. 启动流程集成
+
+- 当虚拟机配置 `integration.clipboard.enabled === true` 时，启动虚拟机自动创建剪贴板桥
+- 剪贴板桥每台虚拟机独立，使用 TCP 连接
+- 不要暴露 `10.0.2.2`、session id、原始 TCP 协议给前端
+
+### 4. ISO 打包
+
+- Sanaka Tools ISO 需要打包到应用内（类似 test-net.iso）
+- 提供路径或挂载接口给前端调用
+
+## 影响哪些文件或模块
+
+- `src-electron/` 主进程 runtime 相关代码
+- `src-electron/preload.ts` IPC 暴露
+- 运行时状态管理
+- 打包配置（ISO 资源）
+
+## 怎么验证
+
+1. 创建虚拟机，开启"共享剪贴板"开关，保存
+2. 启动虚拟机
+3. 在控制台点击"更多" -> "安装 Sanaka 增强功能程序"
+4. 虚拟机内应能看到挂载的 ISO
+5. 前端能通过运行时状态读取剪贴板桥状态
+
+## 前端已完成的部分
+
+- `MachineBuilderPage.tsx`：体验卡片已添加剪贴板共享开关和提示文案
+- `MachineConsolePage.tsx`：更多按钮下拉菜单已添加"安装 Sanaka 增强功能程序"选项
+- `i18n/resources.ts`：已添加中英文翻译
+- `schemas.ts`：已确认 `integration.clipboard` 结构存在
+
+## 注意
+
+- 第一版明确是 XP 优先
+- 当前仅支持文本剪贴板
+- 文案不要暴露内部实现细节

@@ -8,6 +8,9 @@ const { QemuDetector } = require('./QemuDetector');
 const { RuntimeRegistry } = require('./RuntimeRegistry');
 const { QmpClient } = require('./QmpClient');
 const { QemuCommandBuilder } = require('./QemuCommandBuilder');
+const { ClipboardBridgeService } = require('./ClipboardBridgeService');
+const { IsoImageService } = require('./IsoImageService');
+const { SanakaToolsService } = require('./SanakaToolsService');
 
 const MACHINE_CONFIG_FILE = 'machine.svm';
 const STOP_GRACE_TIMEOUT_MS = 8000;
@@ -67,10 +70,17 @@ function parseMachineConfig(content) {
   return {
     ...parsed,
     sharing: {
-      enabled: false,
-      hostPath: '',
-      mode: 'readwrite',
-      shareName: 'qemu'
+      enabled: Boolean(parsed.sharing?.enabled),
+      hostPath: String(parsed.sharing?.hostPath || ''),
+      mode: parsed.sharing?.mode === 'readonly' ? 'readonly' : 'readwrite',
+      shareName: String(parsed.sharing?.shareName || 'qemu')
+    },
+    integration: {
+      clipboard: {
+        enabled: Boolean(parsed.integration?.clipboard?.enabled),
+        mode: 'text',
+        autoConnect: parsed.integration?.clipboard?.autoConnect !== false
+      }
     }
   };
 }
@@ -189,6 +199,15 @@ class RuntimeManager {
     });
     this.registry = options.registry || new RuntimeRegistry();
     this.builder = options.builder || new QemuCommandBuilder();
+    this.readClipboardText = options.readClipboardText || (() => '');
+    this.writeClipboardText = options.writeClipboardText || (() => undefined);
+    this.isoService = options.isoService || new IsoImageService({
+      platform: this.platform
+    });
+    this.sanakaToolsService = options.sanakaToolsService || new SanakaToolsService({
+      app: this.app,
+      isoService: this.isoService
+    });
     this.environment = null;
   }
 
@@ -294,6 +313,46 @@ class RuntimeManager {
     };
   }
 
+  async updateClipboardBridge(machinePath, config) {
+    const normalized = {
+      enabled: Boolean(config?.enabled),
+      mode: 'text',
+      autoConnect: config?.autoConnect !== false
+    };
+
+    const { bundlePath, configPath } = normalizeBundlePath(machinePath);
+    const content = await fsPromises.readFile(configPath, 'utf8');
+    const machine = parseMachineConfig(content);
+    machine.integration = {
+      clipboard: normalized
+    };
+    await fsPromises.writeFile(configPath, this.#stringifyMachine(machine), 'utf8');
+
+    const record = this.registry.get(machine.id);
+    if (record) {
+      record.machine = {
+        ...record.machine,
+        integration: {
+          clipboard: normalized
+        }
+      };
+      await this.#applyClipboardBridge(record, path.join(this.app.getPath('userData'), 'runtime', machine.id));
+      this.registry.set(record);
+      this.emitEvent(
+        makeRuntimeEvent('machine-updated', {
+          machineId: record.machineId,
+          state: this.#serializeState(record)
+        })
+      );
+    }
+
+    return {
+      ok: true,
+      config: normalized,
+      state: record ? this.#serializeState(record) : null
+    };
+  }
+
   async startMachine(machinePath) {
     const environment = await this.detectQemu();
     const { bundlePath, configPath } = normalizeBundlePath(machinePath);
@@ -396,13 +455,15 @@ class RuntimeManager {
       qmpTcpPort: qmpBase.port || null,
       logPath,
       exitCode: null,
-      lastError: null
+      lastError: null,
+      clipboardBridge: null
     };
 
     this.registry.set({
       ...state,
       process: child,
       qmpClient: null,
+      clipboardBridgeService: null,
       machine,
       logStream
     });
@@ -463,6 +524,7 @@ class RuntimeManager {
       }
       record.qmpClient = qmpClient;
       record.status = status?.running === false ? 'starting' : 'running';
+      await this.#applyClipboardBridge(record, runtimeDir);
       this.registry.set(record);
 
       this.emitEvent(
@@ -662,6 +724,21 @@ class RuntimeManager {
     return this.changeMedia(machineId, isoPath, 'cdrom');
   }
 
+  async mountSanakaToolsIso(machineId) {
+    let isoPath = null;
+    try {
+      isoPath = await this.sanakaToolsService.ensureBundledIso();
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Failed to prepare the Sanaka guest enhancement tools ISO.',
+        state: this.#serializeState(this.registry.get(machineId))
+      };
+    }
+
+    return this.changeMedia(machineId, isoPath, 'cdrom');
+  }
+
   async dispose() {
     const active = this.registry.values();
     await Promise.all(active.map((record) => this.forceStopMachine(record.machineId).catch(() => null)));
@@ -719,6 +796,10 @@ class RuntimeManager {
       record.qmpClient.close();
     }
 
+    if (record.clipboardBridgeService) {
+      await record.clipboardBridgeService.stop().catch(() => null);
+    }
+
     if (record.logStream) {
       const stream = record.logStream;
       await Promise.race([
@@ -734,6 +815,8 @@ class RuntimeManager {
     record.exitCode = code;
     record.lastError = error ? error.message : null;
     record.qmpClient = null;
+    record.clipboardBridgeService = null;
+    record.clipboardBridge = null;
     record.process = null;
     record.machine = null;
     record.logStream = null;
@@ -770,7 +853,67 @@ class RuntimeManager {
       logPath: record.logPath,
       exitCode: record.exitCode,
       lastError: record.lastError
+      ,
+      clipboardBridge: record.clipboardBridge || undefined
     };
+  }
+
+  async #applyClipboardBridge(record, runtimeDir) {
+    const enabled = Boolean(record.machine?.integration?.clipboard?.enabled);
+    if (!enabled) {
+      if (record.clipboardBridgeService) {
+        await record.clipboardBridgeService.stop().catch(() => null);
+      }
+      record.clipboardBridgeService = null;
+      record.clipboardBridge = {
+        enabled: false,
+        active: false,
+        connected: false,
+        status: 'idle',
+        textOnly: true,
+        pendingGuestConnection: false,
+        guestToolInstalledKnown: false,
+        lastError: null
+      };
+      return;
+    }
+
+    if (!record.clipboardBridgeService) {
+      const listenPort = await allocatePort({ start: 48000, end: 48999 });
+      const sessionId = `${record.machineId}-${Date.now().toString(36)}`;
+      const service = new ClipboardBridgeService({
+        machineId: record.machineId,
+        sessionId,
+        listenPort,
+        runtimeDir,
+        readClipboardText: this.readClipboardText,
+        writeClipboardText: this.writeClipboardText,
+        onStateChange: (state) => {
+          const activeRecord = this.registry.get(record.machineId);
+          if (!activeRecord) {
+            return;
+          }
+          activeRecord.clipboardBridge = state;
+          this.registry.set(activeRecord);
+          this.emitEvent(
+            makeRuntimeEvent('machine-updated', {
+              machineId: activeRecord.machineId,
+              state: this.#serializeState(activeRecord)
+            })
+          );
+        }
+      });
+      await service.start();
+      record.clipboardBridgeService = service;
+      record.clipboardBridge = service.getState();
+      return;
+    }
+
+    record.clipboardBridge = record.clipboardBridgeService.getState();
+  }
+
+  #stringifyMachine(machine) {
+    return require('smol-toml').stringify(machine);
   }
 
   async #resolveMediaDeviceIds(record, drive) {
