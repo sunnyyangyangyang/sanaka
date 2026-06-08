@@ -11,23 +11,31 @@ printf '%s\n' "当前目录: $REPO_DIR"
 
 mkdir -p "$ISO_DIR"
 
-if [ ! -f "$REPO_DIR/sanaka-tools/linux/bin/sanaka-clipboard" ]; then
-  printf '%s\n' "缺少 Linux 客户机程序: sanaka-tools/linux/bin/sanaka-clipboard" >&2
-  printf '%s\n' "请先在 Linux 上运行 sh sanaka-tools/linux/build.sh，或使用 sh sanaka-tools/linux/build-podman.sh" >&2
+if [ ! -f "$REPO_DIR/sanaka-tools/linux/bin/sanaka-clipboard-amd64" ] && [ ! -f "$REPO_DIR/sanaka-tools/linux/bin/sanaka-clipboard-aarch64" ] && [ ! -f "$REPO_DIR/sanaka-tools/linux/bin/sanaka-clipboard" ]; then
+  printf '%s\n' "缺少 Linux 客户机程序: sanaka-tools/linux/bin/sanaka-clipboard-*" >&2
+  printf '%s\n' "请先在 Linux 上分别构建 amd64 / aarch64，或至少放入一个可用的 Linux ELF。" >&2
   exit 1
 fi
 
 if command -v file >/dev/null 2>&1; then
-  FILE_INFO=$(file "$REPO_DIR/sanaka-tools/linux/bin/sanaka-clipboard")
-  case "$FILE_INFO" in
-    *ELF*)
-      ;;
-    *)
-      printf '%s\n' "sanaka-tools/linux/bin/sanaka-clipboard 不是 Linux ELF，可不能打包进 ISO。" >&2
-      printf '%s\n' "$FILE_INFO" >&2
-      exit 1
-      ;;
-  esac
+  for candidate in \
+    "$REPO_DIR/sanaka-tools/linux/bin/sanaka-clipboard-amd64" \
+    "$REPO_DIR/sanaka-tools/linux/bin/sanaka-clipboard-aarch64" \
+    "$REPO_DIR/sanaka-tools/linux/bin/sanaka-clipboard"
+  do
+    if [ -f "$candidate" ]; then
+      FILE_INFO=$(file "$candidate")
+      case "$FILE_INFO" in
+        *ELF*)
+          ;;
+        *)
+          printf '%s\n' "$candidate 不是 Linux ELF，可不能打包进 ISO。" >&2
+          printf '%s\n' "$FILE_INFO" >&2
+          exit 1
+          ;;
+      esac
+    fi
+  done
 fi
 
 if [ -f "$TARGET_ISO" ]; then

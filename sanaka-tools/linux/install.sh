@@ -13,6 +13,7 @@ AUTOSTART_FILE="${AUTOSTART_DIR}/sanaka.desktop"
 SOURCE_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 MARKER_BEGIN="# >>> sanaka clipboard start >>>"
 MARKER_END="# <<< sanaka clipboard end <<<"
+SELECTED_BINARY=""
 
 log_step() {
   printf '%s\n' "$1"
@@ -63,10 +64,49 @@ write_desktop_file() {
     || fail "无法写入自启动文件：$AUTOSTART_FILE"
 }
 
+detect_guest_arch() {
+  raw_arch=$(uname -m 2>/dev/null || printf '%s' unknown)
+  case "$raw_arch" in
+    x86_64|amd64)
+      printf '%s\n' "amd64"
+      ;;
+    aarch64|arm64)
+      printf '%s\n' "aarch64"
+      ;;
+    *)
+      printf '%s\n' "$raw_arch"
+      ;;
+  esac
+}
+
+resolve_payload_binary() {
+  guest_arch=$(detect_guest_arch)
+  case "$guest_arch" in
+    amd64)
+      if [ -f "${SOURCE_DIR}/bin/sanaka-clipboard-amd64" ]; then
+        printf '%s\n' "${SOURCE_DIR}/bin/sanaka-clipboard-amd64"
+        return 0
+      fi
+      ;;
+    aarch64)
+      if [ -f "${SOURCE_DIR}/bin/sanaka-clipboard-aarch64" ]; then
+        printf '%s\n' "${SOURCE_DIR}/bin/sanaka-clipboard-aarch64"
+        return 0
+      fi
+      ;;
+  esac
+  if [ -f "${SOURCE_DIR}/bin/sanaka-clipboard" ]; then
+    printf '%s\n' "${SOURCE_DIR}/bin/sanaka-clipboard"
+    return 0
+  fi
+  return 1
+}
+
 copy_payload() {
   mkdir -p "$BIN_DIR" "$CONFIG_DIR" "$SHARE_DIR" "$LOG_DIR"
 
-  cp "${SOURCE_DIR}/bin/sanaka-clipboard" "${BIN_DIR}/sanaka-clipboard" || fail "复制 Linux 客户机程序失败"
+  SELECTED_BINARY=$(resolve_payload_binary) || fail "找不到适合当前 Linux 架构的增强程序"
+  cp "$SELECTED_BINARY" "${BIN_DIR}/sanaka-clipboard" || fail "复制 Linux 客户机程序失败"
   cp "${SOURCE_DIR}/bin/start.sh" "${BIN_DIR}/start.sh" || fail "复制启动脚本失败"
   cp "${SOURCE_DIR}/config/sanaka-clipboard.ini" "${CONFIG_DIR}/sanaka-clipboard.ini" || fail "复制配置文件失败"
   cp "${SOURCE_DIR}/share/sanaka.desktop" "${SHARE_DIR}/sanaka.desktop" || fail "复制 desktop 文件失败"
@@ -81,6 +121,7 @@ log_step "[1/6] 检查目录..."
 
 log_step "[2/6] 复制程序..."
 copy_payload
+printf '%s\n' "已选择增强程序：$(basename "$SELECTED_BINARY")"
 
 log_step "[3/6] 写入配置..."
 [ -f "${CONFIG_DIR}/sanaka-clipboard.ini" ] || fail "配置文件写入失败"

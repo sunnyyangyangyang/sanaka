@@ -39,7 +39,7 @@ sudo apt install qemu-system qemu-utils ovmf qemu-block-extra
 
 ## 📦 源码构建
 
-参见 [从零开始的构建指南](./从零开始的构建指南.md)
+参见 [从零开始的构建指南](./docs/guides/从零开始的构建指南.md)
 
 我为您提供了快速工具！
 您可以在本地快速上手：
@@ -66,9 +66,9 @@ bash start.sh
 
 ## 📚 文档入口
 
-- [从零开始的构建指南](./从零开始的构建指南.md)
-- [给人的构建方法](./给人的构建方法.md)
-- [感想](./感想.md)
+- [从零开始的构建指南](./docs/guides/从零开始的构建指南.md)
+- [给人的构建方法](./docs/guides/给人的构建方法.md)
+- [感想](./docs/journal/感想.md)
 
 ## 🩺 环境修复
 

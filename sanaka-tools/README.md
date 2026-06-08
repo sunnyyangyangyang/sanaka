@@ -54,8 +54,10 @@ sanaka-tools/linux/
 - 当前 Linux 版已带一个原生 C 客户端实现
 - 图形剪贴板优先尝试 `wl-paste/wl-copy`、`xclip`、`xsel`
 - 已能生成 `iso/sanaka-tools-linux.iso`
+- Linux 工具镜像可以同时放 `amd64` / `aarch64` 两个二进制，安装时自动选择
 - 如果客户机没有图形剪贴板服务，程序仍会常驻，但同步能力会受限
 - Linux 原生构建：`sh sanaka-tools/linux/build.sh`
+- Linux 双架构一键构建：`SANAKA_TARGET_ARCH=all sh sanaka-tools/linux/build.sh`
 - macOS 上可尝试：`sh sanaka-tools/linux/build-podman.sh`
 
 ## 本地构建
