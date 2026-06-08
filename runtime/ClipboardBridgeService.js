@@ -28,6 +28,7 @@ class ClipboardBridgeService {
     this.readClipboardText = options.readClipboardText || (() => '');
     this.writeClipboardText = options.writeClipboardText || (() => undefined);
     this.onStateChange = options.onStateChange || (() => undefined);
+    this.onLog = options.onLog || (() => undefined);
     this.server = null;
     this.socket = null;
     this.socketBuffer = '';
@@ -200,6 +201,7 @@ class ClipboardBridgeService {
     }
     if (payload.type === 'hello') {
       if (payload.sessionId !== this.sessionId || Number(payload.protocolVersion) !== PROTOCOL_VERSION) {
+        this.onLog(`clipboard hello mismatch machineId=${this.machineId} session=${payload.sessionId || '<empty>'}`);
         this.lastError = 'Clipboard bridge session mismatch.';
         this.#send({ type: 'error', code: 'session_mismatch', timestamp: Date.now() });
         this.#detachSocket();
@@ -209,6 +211,7 @@ class ClipboardBridgeService {
       this.connected = true;
       this.guestToolInstalledKnown = true;
       this.lastError = null;
+      this.onLog(`clipboard hello ok machineId=${this.machineId}`);
       this.#send({
         type: 'hello_ack',
         protocolVersion: PROTOCOL_VERSION,
@@ -222,6 +225,7 @@ class ClipboardBridgeService {
 
     if (payload.type === 'clipboard_push') {
       const text = typeof payload.text === 'string' ? payload.text : '';
+      this.onLog(`clipboard push from guest machineId=${this.machineId} bytes=${Buffer.byteLength(text, 'utf8')}`);
       if (Buffer.byteLength(text, 'utf8') > MAX_CLIPBOARD_BYTES) {
         this.lastError = 'Clipboard payload exceeds size limit.';
         this.#send({ type: 'error', code: 'clipboard_too_large', timestamp: Date.now() });
@@ -237,6 +241,7 @@ class ClipboardBridgeService {
         this.lastRemoteAppliedHash = hash;
         this.lastLocalHash = hash;
         this.lastError = null;
+        this.onLog(`clipboard applied to host machineId=${this.machineId} hash=${hash}`);
         this.#send({
           type: 'clipboard_ack',
           hash,
@@ -245,6 +250,7 @@ class ClipboardBridgeService {
         this.#emitState();
       } catch (error) {
         this.lastError = error instanceof Error ? error.message : 'Failed to write host clipboard.';
+        this.onLog(`clipboard write host failed machineId=${this.machineId} error=${this.lastError}`);
         this.#emitState();
       }
     }
@@ -270,9 +276,11 @@ class ClipboardBridgeService {
     }
     if (Buffer.byteLength(text, 'utf8') > MAX_CLIPBOARD_BYTES) {
       this.lastError = 'Host clipboard text exceeds size limit.';
+      this.onLog(`clipboard host text too large machineId=${this.machineId}`);
       this.#emitState();
       return;
     }
+    this.onLog(`clipboard push to guest machineId=${this.machineId} bytes=${Buffer.byteLength(text, 'utf8')} hash=${hash}`);
     this.#send({
       type: 'clipboard_push',
       source: 'host',

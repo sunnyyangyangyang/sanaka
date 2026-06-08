@@ -206,6 +206,17 @@ export function MachineConsolePage() {
   const audioHint = machine
     ? makeAudioHint(machine.display.frontend, machine.display.sanaka?.backend ?? settings.runtimeDefaults.displayBackendHint, machine.advanced.audio_backend)
     : t('common.disabled');
+  const clipboardBridgeStatusLabel = runtimeState?.clipboardBridge
+    ? runtimeState.clipboardBridge.enabled
+      ? runtimeState.clipboardBridge.connected
+        ? t('details.runtimeClipboardConnected')
+        : runtimeState.clipboardBridge.status === 'error'
+          ? t('details.runtimeClipboardError')
+          : runtimeState.clipboardBridge.status === 'waiting'
+            ? t('details.runtimeClipboardWaiting')
+            : t('details.runtimeClipboardIdle')
+      : t('details.runtimeClipboardDisabled')
+    : t('details.runtimeClipboardDisabled');
 
   const handleStart = async () => {
     if (!machinePath) return;
@@ -541,6 +552,58 @@ export function MachineConsolePage() {
                         {t('details.runtimeWebsocketPort')}
                       </span>
                       <span className="spec-row__value">{String(runtimeState.displayWebSocketPort)}</span>
+                    </div>
+                  )}
+                  {runtimeState.machineMac && (
+                    <div className="spec-row">
+                      <span className="spec-row__label">
+                        <span className="spec-row__icon"><MonitorIcon /></span>
+                        {t('details.runtimeMachineMac')}
+                      </span>
+                      <span className="spec-row__value">{runtimeState.machineMac}</span>
+                    </div>
+                  )}
+                  {runtimeState.clipboardBridge?.bootstrapPort != null && (
+                    <div className="spec-row">
+                      <span className="spec-row__label">
+                        <span className="spec-row__icon"><MonitorIcon /></span>
+                        {t('details.runtimeBootstrapPort')}
+                      </span>
+                      <span className="spec-row__value">{String(runtimeState.clipboardBridge.bootstrapPort)}</span>
+                    </div>
+                  )}
+                  <div className="spec-row">
+                    <span className="spec-row__label">
+                      <span className="spec-row__icon"><MonitorIcon /></span>
+                      {t('details.runtimeClipboardBridge')}
+                    </span>
+                    <span className="spec-row__value">{clipboardBridgeStatusLabel}</span>
+                  </div>
+                  {runtimeState.clipboardBridge?.listenPort != null && (
+                    <div className="spec-row">
+                      <span className="spec-row__label">
+                        <span className="spec-row__icon"><MonitorIcon /></span>
+                        {t('details.runtimeClipboardPort')}
+                      </span>
+                      <span className="spec-row__value">{String(runtimeState.clipboardBridge.listenPort)}</span>
+                    </div>
+                  )}
+                  {runtimeState.clipboardBridge?.sessionId && (
+                    <div className="spec-row">
+                      <span className="spec-row__label">
+                        <span className="spec-row__icon"><MonitorIcon /></span>
+                        {t('details.runtimeClipboardSession')}
+                      </span>
+                      <span className="spec-row__value">{runtimeState.clipboardBridge.sessionId}</span>
+                    </div>
+                  )}
+                  {runtimeState.clipboardBridge?.lastError && (
+                    <div className="spec-row" style={{ color: 'var(--danger)' }}>
+                      <span className="spec-row__label">
+                        <span className="spec-row__icon"><AlertIcon /></span>
+                        {t('details.runtimeClipboardBridge')}
+                      </span>
+                      <span className="spec-row__value">{runtimeState.clipboardBridge.lastError}</span>
                     </div>
                   )}
                   {runtimeState.lastError && (

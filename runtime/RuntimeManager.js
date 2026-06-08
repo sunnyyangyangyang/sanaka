@@ -138,6 +138,18 @@ function appendBoundedText(current, chunk, maxLength = 8192) {
   return combined.slice(combined.length - maxLength);
 }
 
+function appendRuntimeLogLine(logStream, message) {
+  if (!logStream || typeof logStream.write !== 'function') {
+    return;
+  }
+  const timestamp = new Date().toISOString();
+  try {
+    logStream.write(`[sanaka ${timestamp}] ${message}\n`);
+  } catch {
+    // ignore logging failures
+  }
+}
+
 function shellQuote(argument) {
   const value = String(argument ?? '');
   if (value.length === 0) {
@@ -212,12 +224,16 @@ class RuntimeManager {
     this.clipboardBootstrapService = options.clipboardBootstrapService || new ClipboardBootstrapService({
       port: options.clipboardBootstrapPort || DEFAULT_BOOTSTRAP_PORT,
       resolveSessionByMac: (machineMac) => this.#resolveClipboardSessionByMac(machineMac),
+      listSessions: () => this.#listClipboardSessions(),
       onError: (error) => {
         this.emitEvent(
           makeRuntimeEvent('runtime-warning', {
             message: error instanceof Error ? error.message : 'Clipboard bootstrap service failed.'
           })
         );
+      },
+      onLog: (message) => {
+        this.#appendBootstrapLogs(message);
       }
     });
     this.environment = null;
@@ -439,6 +455,9 @@ class RuntimeManager {
     });
 
     const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+    appendRuntimeLogLine(logStream, `machine starting id=${machine.id}`);
+    appendRuntimeLogLine(logStream, `expected machineMac=${deriveStableMacAddress(machine.id)}`);
+    appendRuntimeLogLine(logStream, `qemu command=${[buildResult.binaryPath, ...buildResult.args].map(shellQuote).join(' ')}`);
     let startupStderr = '';
     child.stdout?.pipe(logStream);
     child.stderr?.pipe(logStream);
@@ -908,6 +927,12 @@ class RuntimeManager {
         runtimeDir,
         readClipboardText: this.readClipboardText,
         writeClipboardText: this.writeClipboardText,
+        onLog: (message) => {
+          const activeRecord = this.registry.get(record.machineId);
+          if (activeRecord?.logStream) {
+            appendRuntimeLogLine(activeRecord.logStream, `[clipboard] ${message}`);
+          }
+        },
         onStateChange: (state) => {
           const activeRecord = this.registry.get(record.machineId);
           if (!activeRecord) {
@@ -961,6 +986,24 @@ class RuntimeManager {
     }
 
     return null;
+  }
+
+  #listClipboardSessions() {
+    return this.registry.values().map((record) => ({
+      machineId: record.machineId,
+      machineMac: record.machineMac || null,
+      status: record.status,
+      hasClipboardBridge: Boolean(record.clipboardBridgeService)
+    }));
+  }
+
+  #appendBootstrapLogs(message) {
+    for (const record of this.registry.values()) {
+      if (!record?.logStream) {
+        continue;
+      }
+      appendRuntimeLogLine(record.logStream, `[bootstrap] ${message}`);
+    }
   }
 
   #stringifyMachine(machine) {

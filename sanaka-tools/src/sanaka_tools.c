@@ -22,7 +22,7 @@
 
 #define SANAKA_PROTOCOL_VERSION 1
 #define SANAKA_BOOTSTRAP_PORT 7935
-#define SANAKA_MAX_TEXT_BYTES (1024 * 1024)
+#define SANAKA_MAX_TEXT_BYTES (256 * 1024)
 #define SANAKA_JSON_BUFFER 4096
 #define SANAKA_POLL_INTERVAL_MS 500
 #define SANAKA_RECONNECT_INTERVAL_MS 3000
@@ -880,8 +880,8 @@ static int sanaka_write_clipboard_text(const char *text) {
 }
 
 static void sanaka_send_clipboard_if_changed(SanakaState *state) {
-  char text_buffer[SANAKA_MAX_TEXT_BYTES];
-  char escaped_text[SANAKA_MAX_TEXT_BYTES];
+  char *text_buffer = NULL;
+  char *escaped_text = NULL;
   char hash[16];
   const char *payload_prefix = "{\"type\":\"clipboard_push\",\"source\":\"guest\",\"hash\":\"";
   const char *payload_middle = "\",\"text\":\"";
@@ -891,7 +891,22 @@ static void sanaka_send_clipboard_if_changed(SanakaState *state) {
     return;
   }
 
-  if (!sanaka_read_clipboard_text(text_buffer, sizeof(text_buffer))) {
+  text_buffer = (char *) malloc(SANAKA_MAX_TEXT_BYTES);
+  escaped_text = (char *) malloc(SANAKA_MAX_TEXT_BYTES);
+  if (text_buffer == NULL || escaped_text == NULL) {
+    sanaka_log_line("clipboard send skipped: memory allocation failed");
+    if (text_buffer != NULL) {
+      free(text_buffer);
+    }
+    if (escaped_text != NULL) {
+      free(escaped_text);
+    }
+    return;
+  }
+
+  if (!sanaka_read_clipboard_text(text_buffer, SANAKA_MAX_TEXT_BYTES)) {
+    free(text_buffer);
+    free(escaped_text);
     return;
   }
 
@@ -901,10 +916,14 @@ static void sanaka_send_clipboard_if_changed(SanakaState *state) {
   }
   sanaka_copy_string(state->last_local_hash, sizeof(state->last_local_hash), hash);
   if (strcmp(hash, state->last_remote_applied_hash) == 0) {
+    free(text_buffer);
+    free(escaped_text);
     return;
   }
 
-  if (!sanaka_escape_json_string(text_buffer, escaped_text, sizeof(escaped_text))) {
+  if (!sanaka_escape_json_string(text_buffer, escaped_text, SANAKA_MAX_TEXT_BYTES)) {
+    free(text_buffer);
+    free(escaped_text);
     return;
   }
 
@@ -913,6 +932,8 @@ static void sanaka_send_clipboard_if_changed(SanakaState *state) {
   sanaka_send_all(state->socket_fd, payload_middle, (int) strlen(payload_middle));
   sanaka_send_all(state->socket_fd, escaped_text, (int) strlen(escaped_text));
   sanaka_send_all(state->socket_fd, payload_suffix, (int) strlen(payload_suffix));
+  free(text_buffer);
+  free(escaped_text);
 }
 
 static void sanaka_send_heartbeat_if_needed(SanakaState *state, DWORD now_tick) {
@@ -946,9 +967,14 @@ static int sanaka_recv_once(SanakaState *state) {
   buffer[received] = '\0';
 
   if (strstr(buffer, "\"type\":\"clipboard_push\"") != NULL) {
-    char text_buffer[SANAKA_MAX_TEXT_BYTES];
+    char *text_buffer = NULL;
     char hash[16];
-    if (sanaka_extract_json_string(buffer, "text", text_buffer, sizeof(text_buffer))
+    text_buffer = (char *) malloc(SANAKA_MAX_TEXT_BYTES);
+    if (text_buffer == NULL) {
+      sanaka_log_line("clipboard receive skipped: memory allocation failed");
+      return 1;
+    }
+    if (sanaka_extract_json_string(buffer, "text", text_buffer, SANAKA_MAX_TEXT_BYTES)
       && sanaka_extract_json_string(buffer, "hash", hash, sizeof(hash))) {
       if (sanaka_write_clipboard_text(text_buffer)) {
         sanaka_log_line("clipboard_push applied to local clipboard");
@@ -956,6 +982,7 @@ static int sanaka_recv_once(SanakaState *state) {
         sanaka_copy_string(state->last_local_hash, sizeof(state->last_local_hash), hash);
       }
     }
+    free(text_buffer);
   }
 
   return 1;

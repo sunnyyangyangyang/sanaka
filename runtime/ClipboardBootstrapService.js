@@ -7,7 +7,9 @@ class ClipboardBootstrapService {
   constructor(options = {}) {
     this.port = Number(options.port || DEFAULT_BOOTSTRAP_PORT);
     this.resolveSessionByMac = options.resolveSessionByMac || (() => null);
+    this.listSessions = options.listSessions || (() => []);
     this.onError = options.onError || (() => undefined);
+    this.onLog = options.onLog || (() => undefined);
     this.server = null;
   }
 
@@ -82,6 +84,8 @@ class ClipboardBootstrapService {
     const requestedMac = normalizeMacAddress(payload?.machineMac || payload?.mac);
     const protocolVersion = Number(payload?.protocolVersion || PROTOCOL_VERSION);
 
+    this.onLog(`bootstrap request mac=${requestedMac || '<empty>'} protocol=${protocolVersion}`);
+
     if (!requestedMac) {
       this.#send(socket, {
         type: 'bootstrap_error',
@@ -106,6 +110,8 @@ class ClipboardBootstrapService {
 
     const session = this.resolveSessionByMac(requestedMac);
     if (!session) {
+      const sessions = this.listSessions();
+      this.onLog(`bootstrap no match for mac=${requestedMac}; running=${JSON.stringify(sessions)}`);
       this.#send(socket, {
         type: 'bootstrap_error',
         code: 'machine_not_running',
@@ -116,6 +122,7 @@ class ClipboardBootstrapService {
       return;
     }
 
+    this.onLog(`bootstrap matched mac=${requestedMac} machineId=${session.machineId} port=${session.listenPort}`);
     this.#send(socket, {
       type: 'bootstrap_ack',
       protocolVersion: PROTOCOL_VERSION,

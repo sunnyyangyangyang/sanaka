@@ -80,7 +80,7 @@ function makeBaseMachine(id: string, title: string): Omit<SakaMachine, 'template
     },
     integration: {
       clipboard: {
-        enabled: false,
+        enabled: true,
         mode: 'text',
         autoConnect: true
       }
@@ -105,7 +105,7 @@ export const builtInTemplates: SakaTemplate[] = [
     media: { iso: '', floppy: '' },
     network: { enabled: true, mode: 'user', card: 'pcnet' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
-    integration: { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
+    integration: { clipboard: { enabled: true, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
       gpu: 'cirrus-vga',
@@ -127,7 +127,7 @@ export const builtInTemplates: SakaTemplate[] = [
     media: { iso: '', floppy: '' },
     network: { enabled: true, mode: 'user', card: 'rtl8139' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
-    integration: { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
+    integration: { clipboard: { enabled: true, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
       gpu: 'std',
@@ -149,7 +149,7 @@ export const builtInTemplates: SakaTemplate[] = [
     media: { iso: '', floppy: '' },
     network: { enabled: true, mode: 'user', card: 'rtl8139' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
-    integration: { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
+    integration: { clipboard: { enabled: true, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
       gpu: 'std',
@@ -171,7 +171,7 @@ export const builtInTemplates: SakaTemplate[] = [
     media: { iso: '', floppy: '' },
     network: { enabled: true, mode: 'user', card: 'virtio-net-pci' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
-    integration: { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
+    integration: { clipboard: { enabled: true, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
       gpu: 'virtio-vga',
@@ -193,7 +193,7 @@ export const builtInTemplates: SakaTemplate[] = [
     media: { iso: '', floppy: '' },
     network: { enabled: true, mode: 'user', card: 'virtio-net-pci' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
-    integration: { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
+    integration: { clipboard: { enabled: true, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
       gpu: 'virtio-vga',
@@ -239,12 +239,12 @@ export function createMachineFromTemplateDocument(template: SakaTemplate): SakaM
     integration: template.integration
       ? {
           clipboard: {
-            enabled: template.integration.clipboard?.enabled ?? false,
+            enabled: template.integration.clipboard?.enabled ?? true,
             mode: template.integration.clipboard?.mode ?? 'text',
             autoConnect: template.integration.clipboard?.autoConnect ?? true
           }
         }
-      : { clipboard: { enabled: false, mode: 'text', autoConnect: true } },
+      : { clipboard: { enabled: true, mode: 'text', autoConnect: true } },
     display: {
       ...template.display,
       frontend: 'sanaka',
