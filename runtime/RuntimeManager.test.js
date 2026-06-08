@@ -47,6 +47,10 @@ function createManager(overrides = {}) {
     builder: overrides.builder || { build: vi.fn() },
     isoService: overrides.isoService,
     sanakaToolsService: overrides.sanakaToolsService,
+    clipboardBootstrapService: overrides.clipboardBootstrapService || {
+      start: vi.fn(async () => undefined),
+      stop: vi.fn(async () => undefined)
+    },
     platform: overrides.platform || 'darwin',
     arch: overrides.arch || 'arm64'
   });
@@ -83,6 +87,7 @@ describe('RuntimeManager', () => {
       logPath: '/tmp/runtime/qemu.log',
       exitCode: null,
       lastError: null,
+      machineMac: '52:54:00:12:34:56',
       clipboardBridge: {
         enabled: true,
         active: true,
@@ -90,6 +95,8 @@ describe('RuntimeManager', () => {
         status: 'waiting',
         textOnly: true,
         listenPort: 48123,
+        bootstrapPort: 7935,
+        machineMac: '52:54:00:12:34:56',
         pendingGuestConnection: true,
         guestToolInstalledKnown: false,
         hostAddress: '10.0.2.2',
@@ -120,6 +127,7 @@ describe('RuntimeManager', () => {
         logPath: '/tmp/runtime/qemu.log',
         exitCode: null,
         lastError: null,
+        machineMac: '52:54:00:12:34:56',
         clipboardBridge: {
           enabled: true,
           active: true,
@@ -127,6 +135,8 @@ describe('RuntimeManager', () => {
           status: 'waiting',
           textOnly: true,
           listenPort: 48123,
+          bootstrapPort: 7935,
+          machineMac: '52:54:00:12:34:56',
           pendingGuestConnection: true,
           guestToolInstalledKnown: false,
           hostAddress: '10.0.2.2',

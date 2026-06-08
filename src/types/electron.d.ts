@@ -174,7 +174,9 @@ export interface RuntimeClipboardBridgeState {
   status: 'idle' | 'waiting' | 'connected' | 'error';
   textOnly: true;
   listenPort?: number;
+  bootstrapPort?: number;
   sessionId?: string | null;
+  machineMac?: string | null;
   pendingGuestConnection?: boolean;
   guestToolInstalledKnown?: boolean;
   hostAddress?: string;
@@ -199,6 +201,7 @@ export interface RuntimeMachineState {
   logPath: string;
   exitCode: number | null;
   lastError: string | null;
+  machineMac?: string;
   sharedFolder?: RuntimeSharedFolderState;
   clipboardBridge?: RuntimeClipboardBridgeState;
 }

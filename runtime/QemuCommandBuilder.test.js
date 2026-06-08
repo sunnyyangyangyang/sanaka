@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { QemuCommandBuilder, chooseAccelerator } from './QemuCommandBuilder';
+import { QemuCommandBuilder, chooseAccelerator, deriveStableMacAddress } from './QemuCommandBuilder';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -19,6 +19,11 @@ describe('chooseAccelerator', () => {
 });
 
 describe('QemuCommandBuilder machine types', () => {
+  it('derives a stable locally administered MAC address from the machine id', () => {
+    expect(deriveStableMacAddress('vm-mac-test')).toBe(deriveStableMacAddress('vm-mac-test'));
+    expect(deriveStableMacAddress('vm-mac-test')).toMatch(/^52:54:00:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}$/);
+  });
+
   it('silently disables vapic for x86 guests on QEMU 11.0.0', () => {
     const builder = new QemuCommandBuilder();
     const result = builder.build({
@@ -249,6 +254,7 @@ describe('QemuCommandBuilder machine types', () => {
     const builder = new QemuCommandBuilder();
     const result = builder.build({
       machine: {
+        id: 'windows10-sata',
         title: 'Windows 10',
         system: {
           arch: 'x86_64',
@@ -299,6 +305,7 @@ describe('QemuCommandBuilder machine types', () => {
 
     expect(result.args).toContain('ich9-ahci,id=ahci0');
     expect(result.args).toContain('ide-hd,drive=drive0,bus=ahci0.0');
+    expect(result.args).toContain(`rtl8139,netdev=net0,mac=${deriveStableMacAddress('windows10-sata')}`);
   });
 
   it('adds pflash firmware drives when UEFI is enabled', () => {

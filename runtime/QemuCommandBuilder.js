@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 function tokenizeUserArgs(input) {
   const tokens = [];
@@ -195,6 +196,12 @@ function ensureFile(filePath) {
   return typeof filePath === 'string' && filePath.length > 0 && fs.existsSync(filePath);
 }
 
+function deriveStableMacAddress(machineId) {
+  const digest = crypto.createHash('sha256').update(String(machineId || 'sanaka')).digest();
+  const bytes = [0x52, 0x54, 0x00, digest[0], digest[1], digest[2]];
+  return bytes.map((value) => value.toString(16).padStart(2, '0')).join(':');
+}
+
 function resolveQemuShareDir(binaryPath) {
   const candidates = [
     path.resolve(path.dirname(binaryPath), '../share/qemu'),
@@ -353,7 +360,8 @@ class QemuCommandBuilder {
           ? ['bridge,id=net0']
           : ['user,id=net0'];
       const netdev = netdevParts.join(',');
-      args.push('-netdev', netdev, '-device', `${machine.network.card},netdev=net0`);
+      const machineMac = deriveStableMacAddress(machine.id);
+      args.push('-netdev', netdev, '-device', `${machine.network.card},netdev=net0,mac=${machineMac}`);
     }
 
     if (machine.peripherals?.usb_tablet) {
@@ -390,5 +398,6 @@ module.exports = {
   resolveBinaryKey,
   tokenizeUserArgs,
   buildDisplayArgs,
-  resolveUefiFirmware
+  resolveUefiFirmware,
+  deriveStableMacAddress
 };

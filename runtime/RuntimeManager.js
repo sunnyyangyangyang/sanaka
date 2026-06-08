@@ -7,8 +7,9 @@ const { parse: parseToml } = require('smol-toml');
 const { QemuDetector } = require('./QemuDetector');
 const { RuntimeRegistry } = require('./RuntimeRegistry');
 const { QmpClient } = require('./QmpClient');
-const { QemuCommandBuilder } = require('./QemuCommandBuilder');
+const { QemuCommandBuilder, deriveStableMacAddress } = require('./QemuCommandBuilder');
 const { ClipboardBridgeService } = require('./ClipboardBridgeService');
+const { ClipboardBootstrapService, DEFAULT_BOOTSTRAP_PORT, normalizeMacAddress } = require('./ClipboardBootstrapService');
 const { IsoImageService } = require('./IsoImageService');
 const { SanakaToolsService } = require('./SanakaToolsService');
 
@@ -208,11 +209,23 @@ class RuntimeManager {
       app: this.app,
       isoService: this.isoService
     });
+    this.clipboardBootstrapService = options.clipboardBootstrapService || new ClipboardBootstrapService({
+      port: options.clipboardBootstrapPort || DEFAULT_BOOTSTRAP_PORT,
+      resolveSessionByMac: (machineMac) => this.#resolveClipboardSessionByMac(machineMac),
+      onError: (error) => {
+        this.emitEvent(
+          makeRuntimeEvent('runtime-warning', {
+            message: error instanceof Error ? error.message : 'Clipboard bootstrap service failed.'
+          })
+        );
+      }
+    });
     this.environment = null;
   }
 
   async initialize() {
     await this.detectQemu();
+    await this.clipboardBootstrapService.start();
   }
 
   async detectQemu() {
@@ -456,6 +469,7 @@ class RuntimeManager {
       logPath,
       exitCode: null,
       lastError: null,
+      machineMac: deriveStableMacAddress(machine.id),
       clipboardBridge: null
     };
 
@@ -742,6 +756,7 @@ class RuntimeManager {
   async dispose() {
     const active = this.registry.values();
     await Promise.all(active.map((record) => this.forceStopMachine(record.machineId).catch(() => null)));
+    await this.clipboardBootstrapService.stop().catch(() => null);
   }
 
   handleQmpEventForTest(machineId, message) {
@@ -852,13 +867,14 @@ class RuntimeManager {
       qmpTcpPort: record.qmpTcpPort,
       logPath: record.logPath,
       exitCode: record.exitCode,
-      lastError: record.lastError
-      ,
+      lastError: record.lastError,
+      machineMac: record.machineMac || undefined,
       clipboardBridge: record.clipboardBridge || undefined
     };
   }
 
   async #applyClipboardBridge(record, runtimeDir) {
+    await this.clipboardBootstrapService.start();
     const enabled = Boolean(record.machine?.integration?.clipboard?.enabled);
     if (!enabled) {
       if (record.clipboardBridgeService) {
@@ -871,6 +887,8 @@ class RuntimeManager {
         connected: false,
         status: 'idle',
         textOnly: true,
+        bootstrapPort: DEFAULT_BOOTSTRAP_PORT,
+        machineMac: record.machineMac,
         pendingGuestConnection: false,
         guestToolInstalledKnown: false,
         lastError: null
@@ -883,8 +901,10 @@ class RuntimeManager {
       const sessionId = `${record.machineId}-${Date.now().toString(36)}`;
       const service = new ClipboardBridgeService({
         machineId: record.machineId,
+        machineMac: record.machineMac,
         sessionId,
         listenPort,
+        bootstrapPort: DEFAULT_BOOTSTRAP_PORT,
         runtimeDir,
         readClipboardText: this.readClipboardText,
         writeClipboardText: this.writeClipboardText,
@@ -910,6 +930,37 @@ class RuntimeManager {
     }
 
     record.clipboardBridge = record.clipboardBridgeService.getState();
+  }
+
+  #resolveClipboardSessionByMac(machineMac) {
+    const normalizedMac = normalizeMacAddress(machineMac);
+    if (!normalizedMac) {
+      return null;
+    }
+
+    for (const record of this.registry.values()) {
+      if (!record?.clipboardBridgeService) {
+        continue;
+      }
+      if (normalizeMacAddress(record.machineMac) !== normalizedMac) {
+        continue;
+      }
+
+      const state = record.clipboardBridgeService.getState();
+      if (!state?.enabled || !state?.active || !state?.listenPort || !state?.sessionId) {
+        continue;
+      }
+
+      return {
+        machineId: record.machineId,
+        machineMac: normalizedMac,
+        hostAddress: state.hostAddress || '10.0.2.2',
+        listenPort: state.listenPort,
+        sessionId: state.sessionId
+      };
+    }
+
+    return null;
   }
 
   #stringifyMachine(machine) {

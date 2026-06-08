@@ -14,10 +14,13 @@ Section "Install"
   File "..\config\sanaka-clipboard.ini"
 
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "SanakaClipboard" '"$INSTDIR\sanaka_clipboard.exe"'
+  CreateDirectory "$SMPROGRAMS\Sanaka Tools"
+  CreateShortCut "$SMPROGRAMS\Sanaka Tools\Sanaka Clipboard.lnk" "$INSTDIR\sanaka_clipboard.exe"
 
   DetailPrint "Sanaka Tools installed."
   DetailPrint "Clipboard client: $INSTDIR\sanaka_clipboard.exe"
   DetailPrint "Configuration: $INSTDIR\sanaka-clipboard.ini"
+  DetailPrint "Start Menu: $SMPROGRAMS\Sanaka Tools"
 
   Exec '"$INSTDIR\sanaka_clipboard.exe"'
 SectionEnd

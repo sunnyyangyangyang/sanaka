@@ -20,8 +20,10 @@ function hashText(text) {
 class ClipboardBridgeService {
   constructor(options) {
     this.machineId = options.machineId;
+    this.machineMac = options.machineMac;
     this.sessionId = options.sessionId;
     this.listenPort = options.listenPort;
+    this.bootstrapPort = options.bootstrapPort;
     this.runtimeDir = options.runtimeDir;
     this.readClipboardText = options.readClipboardText || (() => '');
     this.writeClipboardText = options.writeClipboardText || (() => undefined);
@@ -105,7 +107,9 @@ class ClipboardBridgeService {
       status,
       textOnly: true,
       listenPort: this.listenPort,
+      bootstrapPort: this.bootstrapPort,
       sessionId: this.sessionId,
+      machineMac: this.machineMac,
       pendingGuestConnection: !this.connected,
       guestToolInstalledKnown: this.guestToolInstalledKnown,
       hostAddress: '10.0.2.2',
@@ -118,8 +122,10 @@ class ClipboardBridgeService {
     const filePath = path.join(this.runtimeDir, 'sanaka-clipboard.ini');
     const content = [
       'host=10.0.2.2',
+      `bootstrap_port=${this.bootstrapPort || 0}`,
       `port=${this.listenPort}`,
       `session_id=${this.sessionId}`,
+      `machine_mac=${this.machineMac || ''}`,
       `protocol_version=${PROTOCOL_VERSION}`,
       ''
     ].join('\n');
