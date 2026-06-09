@@ -42,6 +42,10 @@ export function getSupportedAccelerators({
   guestArch: string | null | undefined;
   availableAccelerators: readonly string[] | null | undefined;
 }): Array<SakaMachine['system']['accelerator']> {
+  if (!guestArch || guestArch === 'none') {
+    return ['none'];
+  }
+
   const normalizedAvailable = (availableAccelerators || [])
     .map((value) => value.toLowerCase())
     .filter((value): value is KnownAccelerator =>

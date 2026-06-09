@@ -3,7 +3,7 @@
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
-ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR" && pwd)
+ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 REPO_DIR=$(CDPATH= cd -- "$ROOT_DIR/../.." && pwd)
 IMAGE=${SANAKA_PODMAN_IMAGE:-docker.io/library/debian:stable-slim}
 CONTAINER_WORKDIR=/work
@@ -24,7 +24,7 @@ podman run --rm \
     set -eu
     apt-get update
     apt-get install -y build-essential file
-    SANAKA_OUTPUT="sanaka-tools/linux/build/sanaka-clipboard-Linux-x86_64" sh sanaka-tools/linux/build.sh
+    SANAKA_OUTPUT="sanaka-tools/linux/build/sanaka-clipboard-Linux-x86_64" sh sanaka-tools/linux/src/build.sh
     cp sanaka-tools/linux/build/sanaka-clipboard-Linux-x86_64 sanaka-tools/linux/bin/sanaka-clipboard
     chmod +x sanaka-tools/linux/bin/sanaka-clipboard
     file sanaka-tools/linux/bin/sanaka-clipboard

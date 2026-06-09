@@ -44,7 +44,9 @@ function mockElectronApi() {
     dialogs: {
       selectFolder: vi.fn(async () => null),
       pickDisk: vi.fn(async () => null),
-      pickIso: vi.fn(async () => null)
+      pickIso: vi.fn(async () => null),
+      pickFirmwareCode: vi.fn(async () => null),
+      pickFirmwareVars: vi.fn(async () => null)
     },
     disks: {
       getInfo: vi.fn(async () => ({ path: '/tmp/disk.qcow2', format: 'qcow2' as const, virtualSize: 0, actualSize: 0 })),

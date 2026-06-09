@@ -37,6 +37,13 @@
 sudo apt install qemu-system qemu-utils ovmf qemu-block-extra
 ```
 
+## 共享剪贴板
+
+Sanaka 支持剪贴板共享功能，不需要 SPICE、GTK 等特定限制，只需安装 Sanaka 增强功能包，就能支持双方剪贴板共享。
+支持 Windows XP 及以上、主流 Linux 发行版的剪贴板共享，开箱即用。
+
+![](./assets/pictures/clipboard-linux.png)
+
 ## 📦 源码构建
 
 参见 [从零开始的构建指南](./docs/guides/从零开始的构建指南.md)

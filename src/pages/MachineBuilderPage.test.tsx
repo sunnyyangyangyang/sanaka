@@ -48,7 +48,9 @@ function mockElectronApi() {
     dialogs: {
       selectFolder: vi.fn(async () => null),
       pickDisk: vi.fn(async () => null),
-      pickIso: vi.fn(async () => null)
+      pickIso: vi.fn(async () => null),
+      pickFirmwareCode: vi.fn(async () => null),
+      pickFirmwareVars: vi.fn(async () => null)
     },
     disks: {
       getInfo: vi.fn(async () => ({ path: '/tmp/disk.qcow2', format: 'qcow2' as const, virtualSize: 0, actualSize: 0 })),
@@ -223,5 +225,30 @@ describe('MachineBuilderPage', () => {
     expect(screen.queryByRole('option', { name: 'HVF' })).not.toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'WHPX' })).not.toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'HAX' })).not.toBeInTheDocument();
+  });
+
+  it('shows architecture-aware gpu options for aarch64 linux machines', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <AppStoreProvider>
+        <MemoryRouter initialEntries={['/machines/new?template=linux']}>
+          <Routes>
+            <Route path="/machines/new" element={<MachineBuilderPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AppStoreProvider>
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'QEMU 架构' }));
+    await user.click(await screen.findByRole('option', { name: 'aarch64' }));
+
+    await user.click(await screen.findByRole('button', { name: '显卡' }));
+
+    expect(await screen.findByRole('option', { name: 'virtio-gpu-pci (推荐)' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'std (实验性)' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'qxl' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'virtio-vga' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'vmware-svga' })).not.toBeInTheDocument();
   });
 });

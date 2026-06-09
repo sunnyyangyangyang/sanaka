@@ -88,7 +88,11 @@ function makeBaseMachine(id: string, title: string): Omit<SakaMachine, 'template
     disks: [],
     advanced: {
       audio_backend: 'auto',
-      qemu_args: ''
+      qemu_args: '',
+      firmware: {
+        code_path: '',
+        vars_path: ''
+      }
     }
   };
 }
@@ -165,16 +169,16 @@ export const builtInTemplates: SakaTemplate[] = [
     kind: 'template',
     id: 'template-linux',
     title: 'Linux Generic Template',
-    description: 'Balanced Linux virtual workstation with virtio defaults.',
+    description: 'Compatibility-first Linux template with architecture-aware defaults.',
     template: { key: 'linux', label: 'Linux Generic' },
     system: { arch: 'x86_64', machine_type: 'pc-q35-9.2', accelerator: 'tcg', boot_order: 'cdrom', uefi: false, memory_mib: 2048, cpu_cores: 2, sound_card: 'intel-hda' },
     media: { iso: '', floppy: '' },
-    network: { enabled: true, mode: 'user', card: 'virtio-net-pci' },
+    network: { enabled: true, mode: 'user', card: 'e1000' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
     integration: { clipboard: { enabled: true, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
-      gpu: 'virtio-vga',
+      gpu: 'std',
       sanaka: { backend: 'vnc', scale_mode: 'fit', clipboard: true },
       spice: { address: '127.0.0.1', port: 5930, clipboard: true, audio: true },
       vnc: { address: '127.0.0.1', port: 5901, password: '' }
@@ -189,14 +193,14 @@ export const builtInTemplates: SakaTemplate[] = [
     title: 'Custom Template',
     description: 'Manual machine template for advanced workflows.',
     template: { key: 'custom', label: 'Custom' },
-    system: { arch: 'x86_64', machine_type: 'pc-q35-9.2', accelerator: 'tcg', boot_order: 'disk', uefi: false, memory_mib: 2048, cpu_cores: 2, sound_card: 'intel-hda' },
+    system: { arch: 'none', machine_type: 'none', accelerator: 'none', boot_order: 'none', uefi: false, memory_mib: 2048, cpu_cores: 2, sound_card: 'none' },
     media: { iso: '', floppy: '' },
-    network: { enabled: true, mode: 'user', card: 'virtio-net-pci' },
+    network: { enabled: false, mode: 'user', card: 'none' },
     sharing: { enabled: false, hostPath: '', mode: 'readwrite', shareName: 'qemu' },
     integration: { clipboard: { enabled: true, mode: 'text', autoConnect: true } },
     display: {
       frontend: 'sanaka',
-      gpu: 'virtio-vga',
+      gpu: 'none',
       sanaka: { backend: 'vnc', scale_mode: 'fit', clipboard: true },
       spice: { address: '127.0.0.1', port: 5930, clipboard: true, audio: true },
       vnc: { address: '127.0.0.1', port: 5901, password: '' }

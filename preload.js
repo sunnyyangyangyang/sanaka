@@ -27,7 +27,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   dialogs: {
     selectFolder: () => ipcRenderer.invoke('dialogs:select-folder'),
     pickDisk: () => ipcRenderer.invoke('dialogs:pick-disk'),
-    pickIso: () => ipcRenderer.invoke('dialogs:pick-iso')
+    pickIso: () => ipcRenderer.invoke('dialogs:pick-iso'),
+    pickFirmwareCode: () => ipcRenderer.invoke('dialogs:pick-firmware-code'),
+    pickFirmwareVars: () => ipcRenderer.invoke('dialogs:pick-firmware-vars')
   },
   disks: {
     getInfo: (imagePath) => ipcRenderer.invoke('disks:get-info', imagePath),

@@ -166,11 +166,13 @@ function mapAudioDevice(machine, audioBackend, hostPlatform) {
 }
 
 function buildDisplayArgs(machineArch, gpu) {
-  if (guestFamily(machineArch) === 'arm') {
-    return ['-device', 'virtio-gpu-pci'];
+  if (machineArch === 'ppc') {
+    if (gpu === 'cirrus-vga') return ['-vga', 'cirrus'];
+    return ['-vga', 'std'];
   }
 
   if (gpu === 'virtio-vga') return ['-vga', 'none', '-device', 'virtio-vga'];
+  if (gpu === 'virtio-gpu-pci') return ['-device', 'virtio-gpu-pci'];
   if (gpu === 'cirrus-vga') return ['-vga', 'cirrus'];
   if (gpu === 'vmware-svga') return ['-vga', 'vmware'];
   if (gpu === 'qxl') return ['-vga', 'qxl'];
@@ -182,14 +184,134 @@ function defaultMachineType(machineArch) {
   if (machineArch === 'aarch64' || machineArch === 'arm') {
     return 'virt';
   }
+  if (machineArch === 'riscv64') {
+    return 'virt';
+  }
   if (machineArch === 'x86_64' || machineArch === 'i386') {
     return 'pc-q35-9.2';
+  }
+  if (machineArch === 'ppc') {
+    return 'mac99';
+  }
+  if (machineArch === 'ppc64') {
+    return 'pseries';
   }
   return '';
 }
 
 function isX86MachineType(machineType) {
   return machineType === 'q35' || machineType === 'pc' || machineType.startsWith('pc-');
+}
+
+function isQ35MachineType(machineType) {
+  return machineType === 'q35' || machineType.startsWith('pc-q35');
+}
+
+function isPowerMacMachineType(machineType) {
+  return machineType === 'mac99'
+    || machineType === 'g3beige'
+    || machineType.startsWith('mac99-')
+    || machineType.startsWith('g3beige-');
+}
+
+function isPSeriesMachineType(machineType) {
+  return machineType === 'pseries' || machineType.startsWith('pseries-');
+}
+
+function resolveScsiController(machineArch, machineType) {
+  if ((machineArch === 'ppc' || machineArch === 'ppc64') && isPSeriesMachineType(machineType)) {
+    return 'spapr-vscsi,id=scsi0';
+  }
+  return 'virtio-scsi-pci,id=scsi0';
+}
+
+function resolveCdromAttachment(machineArch, machineType) {
+  if (machineArch === 'x86_64' || machineArch === 'i386') {
+    if (isQ35MachineType(machineType)) {
+      return {
+        controller: 'ahci',
+        device: 'ide-cd,id=cdrom0,drive=cd0,bus=ahci0.0'
+      };
+    }
+
+    return {
+      controller: null,
+      device: 'ide-cd,id=cdrom0,drive=cd0,bus=ide.1'
+    };
+  }
+
+  if (machineArch === 'ppc' && isPowerMacMachineType(machineType)) {
+    return {
+      controller: null,
+      device: 'ide-cd,id=cdrom0,drive=cd0,bus=ide.1'
+    };
+  }
+
+  return {
+    controller: 'scsi',
+    device: 'scsi-cd,drive=cd0,bus=scsi0.0'
+  };
+}
+
+function resolveDiskAttachment(machineArch, machineType, disk, index) {
+  const requestedInterface = disk.interface || 'virtio';
+  const sataBusOffset = 1;
+
+  if (machineArch === 'x86_64' || machineArch === 'i386') {
+    if (requestedInterface === 'scsi') {
+      return {
+        controller: 'scsi',
+        device: `scsi-hd,drive=drive${index},bus=scsi0.0`
+      };
+    }
+
+    if (requestedInterface === 'sata' || (requestedInterface === 'ide' && isQ35MachineType(machineType))) {
+      return {
+        controller: 'ahci',
+        device: `ide-hd,drive=drive${index},bus=ahci0.${index + sataBusOffset}`
+      };
+    }
+
+    if (requestedInterface === 'ide') {
+      return {
+        controller: null,
+        device: `ide-hd,drive=drive${index},bus=ide.${index}`
+      };
+    }
+
+    return {
+      controller: null,
+      device: `virtio-blk-pci,drive=drive${index}`
+    };
+  }
+
+  if (machineArch === 'ppc' && isPowerMacMachineType(machineType)) {
+    if (requestedInterface === 'scsi') {
+      return {
+        controller: 'scsi',
+        device: `scsi-hd,drive=drive${index},bus=scsi0.0`
+      };
+    }
+
+    if (requestedInterface === 'ide' || requestedInterface === 'sata') {
+      return {
+        controller: null,
+        device: `ide-hd,drive=drive${index},bus=ide.${index}`
+      };
+    }
+  }
+
+  if (requestedInterface === 'virtio') {
+    return {
+      controller: null,
+      device: `virtio-blk-pci,drive=drive${index}`
+    };
+  }
+
+  return {
+    controller: 'scsi',
+    device: `scsi-hd,drive=drive${index},bus=scsi0.0`
+  };
 }
 
 function ensureFile(filePath) {
@@ -215,27 +337,43 @@ function resolveQemuShareDir(binaryPath) {
   return candidates.find((candidate) => fs.existsSync(candidate)) || null;
 }
 
-function resolveUefiFirmware(binaryPath, machineType, guestArch, runtimeDir) {
-  if (guestArch !== 'x86_64' && guestArch !== 'i386') {
-    throw new Error(`UEFI is not supported yet for ${guestArch} machines.`);
+function resolveFirmwarePair(customFirmware, runtimeDir, guestArch, autoCodeCandidates, autoVarsCandidates) {
+  const customCodePath = customFirmware?.code_path || '';
+  const customVarsPath = customFirmware?.vars_path || '';
+
+  if (customCodePath) {
+    if (!ensureFile(customCodePath)) {
+      throw new Error(`UEFI firmware code file was not found: ${customCodePath}`);
+    }
+
+    if (customVarsPath) {
+      if (!ensureFile(customVarsPath)) {
+        throw new Error(`UEFI firmware vars file was not found: ${customVarsPath}`);
+      }
+      return {
+        codePath: customCodePath,
+        varsPath: customVarsPath
+      };
+    }
+
+    return {
+      codePath: customCodePath,
+      varsPath: ''
+    };
   }
 
-  if (!isX86MachineType(machineType)) {
-    throw new Error(`UEFI requires a PC-compatible machine type. Current machine type: ${machineType}.`);
+  const codePath = autoCodeCandidates.find(ensureFile);
+  const varsTemplatePath = autoVarsCandidates.find(ensureFile);
+
+  if (!codePath) {
+    throw new Error('UEFI firmware was not found. Install firmware files or provide a custom pflash CODE file.');
   }
 
-  const shareDir = resolveQemuShareDir(binaryPath);
-  if (!shareDir) {
-    throw new Error('UEFI firmware was not found. Install QEMU firmware files before enabling UEFI.');
-  }
-
-  const codePath = guestArch === 'x86_64'
-    ? path.join(shareDir, 'edk2-x86_64-code.fd')
-    : path.join(shareDir, 'edk2-i386-code.fd');
-  const varsTemplatePath = path.join(shareDir, 'edk2-i386-vars.fd');
-
-  if (!ensureFile(codePath) || !ensureFile(varsTemplatePath)) {
-    throw new Error('UEFI firmware was not found. Install QEMU firmware files before enabling UEFI.');
+  if (!varsTemplatePath) {
+    return {
+      codePath,
+      varsPath: ''
+    };
   }
 
   const varsPath = path.join(runtimeDir, `uefi-${guestArch}-vars.fd`);
@@ -249,9 +387,78 @@ function resolveUefiFirmware(binaryPath, machineType, guestArch, runtimeDir) {
   };
 }
 
+function resolveUefiFirmware(binaryPath, machineType, guestArch, runtimeDir, customFirmware) {
+  const shareDir = resolveQemuShareDir(binaryPath);
+
+  if (guestArch === 'x86_64' || guestArch === 'i386') {
+    if (!isX86MachineType(machineType)) {
+      throw new Error(`UEFI requires a PC-compatible machine type. Current machine type: ${machineType}.`);
+    }
+
+    const autoCodeCandidates = shareDir
+      ? [
+          guestArch === 'x86_64'
+            ? path.join(shareDir, 'edk2-x86_64-code.fd')
+            : path.join(shareDir, 'edk2-i386-code.fd')
+        ]
+      : [];
+    const autoVarsCandidates = shareDir
+      ? [
+          path.join(shareDir, 'edk2-i386-vars.fd')
+        ]
+      : [];
+
+    return resolveFirmwarePair(customFirmware, runtimeDir, guestArch, autoCodeCandidates, autoVarsCandidates);
+  }
+
+  if (guestArch === 'aarch64' || guestArch === 'arm') {
+    if (machineType !== 'virt') {
+      throw new Error(`UEFI for ${guestArch} requires the virt machine type. Current machine type: ${machineType}.`);
+    }
+
+    const autoCodeCandidates = [
+      '/opt/homebrew/share/qemu/edk2-aarch64-code.fd',
+      '/usr/local/share/qemu/edk2-aarch64-code.fd',
+      '/usr/share/qemu/edk2-aarch64-code.fd',
+      '/opt/homebrew/share/qemu/AAVMF_CODE.fd',
+      '/usr/local/share/qemu/AAVMF_CODE.fd',
+      '/usr/share/qemu/AAVMF_CODE.fd',
+      '/opt/homebrew/share/qemu/QEMU_EFI.fd',
+      '/usr/local/share/qemu/QEMU_EFI.fd',
+      '/usr/share/qemu/QEMU_EFI.fd'
+    ];
+    const autoVarsCandidates = [
+      '/opt/homebrew/share/qemu/edk2-arm-vars.fd',
+      '/usr/local/share/qemu/edk2-arm-vars.fd',
+      '/usr/share/qemu/edk2-arm-vars.fd',
+      '/opt/homebrew/share/qemu/AAVMF_VARS.fd',
+      '/usr/local/share/qemu/AAVMF_VARS.fd',
+      '/usr/share/qemu/AAVMF_VARS.fd'
+    ];
+
+    return resolveFirmwarePair(customFirmware, runtimeDir, guestArch, autoCodeCandidates, autoVarsCandidates);
+  }
+
+  throw new Error(`UEFI is not supported yet for ${guestArch} machines.`);
+}
+
 class QemuCommandBuilder {
   build({ machine, environment, runtimePaths, displayConfig, host }) {
     const guestArch = machine.system.arch;
+
+    if (!guestArch || guestArch === 'none') {
+      throw new Error('Machine architecture is not configured yet.');
+    }
+    if (!machine.system?.accelerator || machine.system.accelerator === 'none') {
+      throw new Error('Machine accelerator is not configured yet.');
+    }
+    if (!machine.system?.machine_type || machine.system.machine_type === 'none') {
+      throw new Error('Machine type is not configured yet.');
+    }
+    if (!machine.display?.gpu || machine.display.gpu === 'none') {
+      throw new Error('Machine display device is not configured yet.');
+    }
+
     const binaryKey = resolveBinaryKey(guestArch);
     const binary = environment.binaries[binaryKey];
 
@@ -297,39 +504,51 @@ class QemuCommandBuilder {
     args.push('-qmp', qmpAddress);
 
     if (machine.system?.uefi) {
-      const firmware = resolveUefiFirmware(binary.path, machineType, guestArch, runtimePaths.runtimeDir);
+      const firmware = resolveUefiFirmware(
+        binary.path,
+        machineType,
+        guestArch,
+        runtimePaths.runtimeDir,
+        machine.advanced?.firmware
+      );
       args.push('-drive', `if=pflash,format=raw,readonly=on,file=${firmware.codePath}`);
-      args.push('-drive', `if=pflash,format=raw,file=${firmware.varsPath}`);
+      if (firmware.varsPath) {
+        args.push('-drive', `if=pflash,format=raw,file=${firmware.varsPath}`);
+      }
     }
 
     args.push(...buildDisplayArgs(guestArch, machine.display.gpu));
 
+    const cdromAttachment = resolveCdromAttachment(guestArch, machineType);
     args.push('-drive', `if=none,id=cd0,media=cdrom,readonly=on,file=${machine.media?.iso || ''}`);
-    args.push('-device', 'ide-cd,id=cdrom0,drive=cd0');
 
     if (machine.media?.floppy) {
       args.push('-drive', `if=none,id=floppy0,media=disk,format=raw,file=${machine.media.floppy}`);
       args.push('-device', 'floppy,id=floppy-device0,drive=floppy0');
     }
 
-    let needsScsiController = false;
-    let needsSataController = false;
-    for (const disk of machine.disks || []) {
-      if (disk.interface === 'scsi') {
+    let needsScsiController = cdromAttachment.controller === 'scsi';
+    let needsSataController = cdromAttachment.controller === 'ahci';
+    const diskAttachments = (machine.disks || []).map((disk, index) => {
+      const attachment = resolveDiskAttachment(guestArch, machineType, disk, index);
+      if (attachment.controller === 'scsi') {
         needsScsiController = true;
       }
-      if (disk.interface === 'sata') {
+      if (attachment.controller === 'ahci') {
         needsSataController = true;
       }
-    }
+      return attachment;
+    });
 
     if (needsScsiController) {
-      args.push('-device', 'virtio-scsi-pci,id=scsi0');
+      args.push('-device', resolveScsiController(guestArch, machineType));
     }
 
     if (needsSataController) {
       args.push('-device', 'ich9-ahci,id=ahci0');
     }
+
+    args.push('-device', cdromAttachment.device);
 
     (machine.disks || []).forEach((disk, index) => {
       const driveId = `drive${index}`;
@@ -338,19 +557,13 @@ class QemuCommandBuilder {
         driveArgs.push('readonly=on');
       }
       args.push('-drive', driveArgs.join(','));
-
-      if (disk.interface === 'ide') {
-        args.push('-device', `ide-hd,drive=${driveId}`);
-      } else if (disk.interface === 'scsi') {
-        args.push('-device', `scsi-hd,drive=${driveId},bus=scsi0.0`);
-      } else if (disk.interface === 'sata') {
-        args.push('-device', `ide-hd,drive=${driveId},bus=ahci0.${index}`);
-      } else {
-        args.push('-device', `virtio-blk-pci,drive=${driveId}`);
-      }
+      args.push('-device', diskAttachments[index].device);
     });
 
     if (machine.network?.enabled) {
+      if (!machine.network.card || machine.network.card === 'none') {
+        throw new Error('Machine network card is not configured yet.');
+      }
       if (machine.network.mode === 'bridge' && host.platform !== 'linux') {
         throw new Error('Bridge networking is only supported in the first runtime version on Linux hosts.');
       }

@@ -106,6 +106,22 @@ const AlertIcon = () => (
   </svg>
 );
 
+const FirmwareIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="100%" height="100%">
+    <rect x="6" y="2" width="12" height="20" rx="2" />
+    <path d="M9 6h6" />
+    <path d="M9 10h6" />
+    <path d="M9 14h4" />
+  </svg>
+);
+
+const FileIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="100%" height="100%">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+  </svg>
+);
+
 function getTemplateIcon(key: string) {
   const lowercaseKey = key.toLowerCase();
   if (lowercaseKey.includes('win')) {
@@ -121,25 +137,147 @@ const archOptions = ['x86_64', 'i386', 'aarch64', 'arm', 'riscv64', 'ppc', 'ppc6
   value: SakaMachine['system']['arch'];
   label: string;
 }>;
+const customArchOptions = [
+  { value: 'none', label: 'none' },
+  ...archOptions
+] as Array<{
+  value: SakaMachine['system']['arch'];
+  label: string;
+}>;
 const x86MachineTypeOptions = [
+  { value: 'pc-q35-11.0', label: 'pc-q35-11.0' },
+  { value: 'pc-q35-10.2', label: 'pc-q35-10.2' },
+  { value: 'pc-q35-10.1', label: 'pc-q35-10.1' },
+  { value: 'pc-q35-10.0', label: 'pc-q35-10.0' },
   { value: 'pc-q35-9.2', label: 'pc-q35-9.2' },
+  { value: 'pc-q35-9.1', label: 'pc-q35-9.1' },
+  { value: 'pc-q35-9.0', label: 'pc-q35-9.0' },
   { value: 'q35', label: 'q35' },
+  { value: 'pc-i440fx-11.0', label: 'pc-i440fx-11.0' },
+  { value: 'pc-i440fx-10.2', label: 'pc-i440fx-10.2' },
+  { value: 'pc-i440fx-10.1', label: 'pc-i440fx-10.1' },
+  { value: 'pc-i440fx-10.0', label: 'pc-i440fx-10.0' },
   { value: 'pc-i440fx-9.2', label: 'pc-i440fx-9.2' },
+  { value: 'pc-i440fx-9.1', label: 'pc-i440fx-9.1' },
+  { value: 'pc-i440fx-9.0', label: 'pc-i440fx-9.0' },
   { value: 'pc', label: 'pc' }
 ] as const;
+const aarch64MachineTypeOptions = [
+  { value: 'virt', label: 'virt' },
+  { value: 'virt-11.0', label: 'virt-11.0' },
+  { value: 'virt-10.2', label: 'virt-10.2' },
+  { value: 'virt-10.1', label: 'virt-10.1' },
+  { value: 'virt-10.0', label: 'virt-10.0' },
+  { value: 'virt-9.2', label: 'virt-9.2' },
+  { value: 'virt-9.1', label: 'virt-9.1' },
+  { value: 'virt-9.0', label: 'virt-9.0' },
+  { value: 'virt-8.2', label: 'virt-8.2' },
+  { value: 'virt-8.1', label: 'virt-8.1' },
+  { value: 'sbsa-ref', label: 'sbsa-ref' },
+  { value: 'raspi4b', label: 'raspi4b' },
+  { value: 'raspi3b', label: 'raspi3b' },
+  { value: 'imx8mp-evk', label: 'imx8mp-evk' },
+  { value: 'xlnx-zcu102', label: 'xlnx-zcu102' },
+  { value: 'vexpress-a15', label: 'vexpress-a15' },
+  { value: 'vexpress-a9', label: 'vexpress-a9' }
+] as const;
 const armMachineTypeOptions = [
-  { value: 'virt', label: 'virt' }
+  { value: 'virt', label: 'virt' },
+  { value: 'virt-11.0', label: 'virt-11.0' },
+  { value: 'virt-10.2', label: 'virt-10.2' },
+  { value: 'virt-10.1', label: 'virt-10.1' },
+  { value: 'virt-10.0', label: 'virt-10.0' },
+  { value: 'virt-9.2', label: 'virt-9.2' },
+  { value: 'virt-9.1', label: 'virt-9.1' },
+  { value: 'virt-9.0', label: 'virt-9.0' },
+  { value: 'virt-8.2', label: 'virt-8.2' },
+  { value: 'virt-8.1', label: 'virt-8.1' },
+  { value: 'vexpress-a15', label: 'vexpress-a15' },
+  { value: 'vexpress-a9', label: 'vexpress-a9' },
+  { value: 'realview-eb', label: 'realview-eb' },
+  { value: 'realview-eb-mpcore', label: 'realview-eb-mpcore' },
+  { value: 'realview-pb-a8', label: 'realview-pb-a8' },
+  { value: 'realview-pbx-a9', label: 'realview-pbx-a9' },
+  { value: 'versatileab', label: 'versatileab' },
+  { value: 'versatilepb', label: 'versatilepb' },
+  { value: 'integratorcp', label: 'integratorcp' },
+  { value: 'raspi2b', label: 'raspi2b' },
+  { value: 'raspi1ap', label: 'raspi1ap' },
+  { value: 'raspi0', label: 'raspi0' },
+  { value: 'cubieboard', label: 'cubieboard' },
+  { value: 'orangepi-pc', label: 'orangepi-pc' },
+  { value: 'sabrelite', label: 'sabrelite' },
+  { value: 'mcimx7d-sabre', label: 'mcimx7d-sabre' },
+  { value: 'mcimx6ul-evk', label: 'mcimx6ul-evk' },
+  { value: 'imx25-pdk', label: 'imx25-pdk' },
+  { value: 'mps2-an385', label: 'mps2-an385 (Cortex-M3)' },
+  { value: 'mps2-an386', label: 'mps2-an386 (Cortex-M4)' },
+  { value: 'mps2-an500', label: 'mps2-an500 (Cortex-M7)' },
+  { value: 'mps2-an505', label: 'mps2-an505 (Cortex-M33)' },
+  { value: 'mps2-an511', label: 'mps2-an511 (Cortex-M3)' },
+  { value: 'mps2-an521', label: 'mps2-an521 (dual Cortex-M33)' },
+  { value: 'mps3-an524', label: 'mps3-an524 (dual Cortex-M33)' },
+  { value: 'mps3-an536', label: 'mps3-an536 (Cortex-R52)' },
+  { value: 'mps3-an547', label: 'mps3-an547 (Cortex-M55)' }
+] as const;
+const riscvMachineTypeOptions = [
+  { value: 'virt', label: 'virt' },
+  { value: 'spike', label: 'spike' },
+  { value: 'sifive_u', label: 'sifive_u' },
+  { value: 'sifive_e', label: 'sifive_e' },
+  { value: 'microchip-icicle-kit', label: 'microchip-icicle-kit' }
+] as const;
+const ppcMachineTypeOptions = [
+  { value: 'mac99', label: 'mac99' },
+  { value: 'g3beige', label: 'g3beige' },
+  { value: 'pegasos2', label: 'pegasos2' },
+  { value: 'pegasos1', label: 'pegasos1' },
+  { value: 'sam460ex', label: 'sam460ex' },
+  { value: '40p', label: '40p' }
+] as const;
+const ppc64MachineTypeOptions = [
+  { value: 'pseries', label: 'pseries' },
+  { value: 'pseries-11.0', label: 'pseries-11.0' },
+  { value: 'pseries-10.2', label: 'pseries-10.2' },
+  { value: 'pseries-10.1', label: 'pseries-10.1' },
+  { value: 'pseries-10.0', label: 'pseries-10.0' },
+  { value: 'pseries-9.2', label: 'pseries-9.2' },
+  { value: 'pseries-9.1', label: 'pseries-9.1' },
+  { value: 'pseries-9.0', label: 'pseries-9.0' },
+  { value: 'powernv10', label: 'powernv10' },
+  { value: 'powernv10-rainier', label: 'powernv10-rainier' },
+  { value: 'powernv9', label: 'powernv9' },
+  { value: 'powernv8', label: 'powernv8' },
+  { value: 'mac99', label: 'mac99' },
+  { value: 'g3beige', label: 'g3beige' }
 ] as const;
 const fallbackMachineTypeOptions = [
   { value: 'none', label: 'none' }
 ] as const;
 const soundOptions = ['ac97', 'intel-hda', 'sb16', 'virtio-sound-pci'].map((value) => ({ value, label: value })) as Array<{ value: string; label: string }>;
-const gpuOptions = [
+const customSoundOptions = [
+  { value: 'none', label: 'none' },
+  ...soundOptions
+] as Array<{ value: string; label: string }>;
+const x86GpuOptions = [
   { value: 'std', label: 'std (Standard VGA)' },
   { value: 'cirrus-vga', label: 'cirrus-vga' },
   { value: 'qxl', label: 'qxl' },
   { value: 'virtio-vga', label: 'virtio-vga' },
   { value: 'vmware-svga', label: 'vmware-svga' }
+] as Array<{ value: string; label: string }>;
+const armLikeGpuOptions = [
+  { value: 'virtio-gpu-pci', label: 'virtio-gpu-pci (推荐)' },
+  { value: 'std', label: 'std (实验性)' }
+] as Array<{ value: string; label: string }>;
+const ppcGpuOptions = [
+  { value: 'std', label: 'std (Standard VGA)' },
+  { value: 'cirrus-vga', label: 'cirrus-vga' }
+] as Array<{ value: string; label: string }>;
+const customGpuOptions = [
+  { value: 'none', label: 'none' },
+  ...x86GpuOptions,
+  { value: 'virtio-gpu-pci', label: 'virtio-gpu-pci' }
 ] as Array<{ value: string; label: string }>;
 const networkCardOptions = [
   { value: 'rtl8139', label: 'rtl8139' },
@@ -147,6 +285,10 @@ const networkCardOptions = [
   { value: 'pcnet', label: 'pcnet' },
   { value: 'ne2k_pci', label: 'ne2k_pci' },
   { value: 'virtio-net-pci', label: 'virtio-net-pci' }
+] as Array<{ value: string; label: string }>;
+const customNetworkCardOptions = [
+  { value: 'none', label: 'none' },
+  ...networkCardOptions
 ] as Array<{ value: string; label: string }>;
 const diskInterfaceOptions = [
   { value: 'ide', label: 'IDE (兼容性)' },
@@ -167,7 +309,141 @@ const audioBackendOptions = [
   { value: 'directsound', label: 'DirectSound' }
 ] as ReadonlyArray<{ value: SakaMachine['advanced']['audio_backend']; label: string }>;
 
+function linuxArchDefaults(arch: SakaMachine['system']['arch']) {
+  if (arch === 'i386') {
+    return {
+      machineType: 'pc-i440fx-9.2',
+      accelerator: 'tcg' as SakaMachine['system']['accelerator'],
+      soundCard: 'ac97',
+      gpu: 'std',
+      networkEnabled: true,
+      networkCard: 'rtl8139',
+      diskInterface: 'ide' as DiskInterface
+    };
+  }
+  if (arch === 'aarch64') {
+    return {
+      machineType: 'virt',
+      accelerator: 'tcg' as SakaMachine['system']['accelerator'],
+      soundCard: 'intel-hda',
+      gpu: 'virtio-gpu-pci',
+      networkEnabled: true,
+      networkCard: 'virtio-net-pci',
+      diskInterface: 'scsi' as DiskInterface
+    };
+  }
+  if (arch === 'arm') {
+    return {
+      machineType: 'virt',
+      accelerator: 'tcg' as SakaMachine['system']['accelerator'],
+      soundCard: 'sb16',
+      gpu: 'virtio-gpu-pci',
+      networkEnabled: true,
+      networkCard: 'virtio-net-pci',
+      diskInterface: 'scsi' as DiskInterface
+    };
+  }
+  if (arch === 'riscv64') {
+    return {
+      machineType: 'virt',
+      accelerator: 'tcg' as SakaMachine['system']['accelerator'],
+      soundCard: 'intel-hda',
+      gpu: 'virtio-gpu-pci',
+      networkEnabled: true,
+      networkCard: 'virtio-net-pci',
+      diskInterface: 'scsi' as DiskInterface
+    };
+  }
+  if (arch === 'ppc') {
+    return {
+      machineType: 'mac99',
+      accelerator: 'tcg' as SakaMachine['system']['accelerator'],
+      soundCard: 'sb16',
+      gpu: 'std',
+      networkEnabled: true,
+      networkCard: 'rtl8139',
+      diskInterface: 'ide' as DiskInterface
+    };
+  }
+  if (arch === 'ppc64') {
+    return {
+      machineType: 'pseries',
+      accelerator: 'tcg' as SakaMachine['system']['accelerator'],
+      soundCard: 'intel-hda',
+      gpu: 'virtio-gpu-pci',
+      networkEnabled: true,
+      networkCard: 'virtio-net-pci',
+      diskInterface: 'scsi' as DiskInterface
+    };
+  }
+  return {
+    machineType: 'pc-q35-9.2',
+    accelerator: 'tcg' as SakaMachine['system']['accelerator'],
+    soundCard: 'intel-hda',
+    gpu: 'std',
+    networkEnabled: true,
+    networkCard: 'e1000',
+    diskInterface: 'sata' as DiskInterface
+  };
+}
+
+function gpuOptionsForMachine(machine: SakaMachine) {
+  if (machine.template.key === 'custom') {
+    return customGpuOptions;
+  }
+  if (machine.system.arch === 'aarch64' || machine.system.arch === 'arm' || machine.system.arch === 'riscv64' || machine.system.arch === 'ppc64') {
+    return armLikeGpuOptions;
+  }
+  if (machine.system.arch === 'ppc') {
+    return ppcGpuOptions;
+  }
+  return x86GpuOptions;
+}
+
+function networkCardOptionsForMachine(machine: SakaMachine) {
+  if (machine.template.key === 'custom') {
+    return customNetworkCardOptions;
+  }
+  if (machine.system.arch === 'aarch64' || machine.system.arch === 'arm' || machine.system.arch === 'riscv64' || machine.system.arch === 'ppc64') {
+    return [{ value: 'virtio-net-pci', label: 'virtio-net-pci' }] as Array<{ value: string; label: string }>;
+  }
+  if (machine.system.arch === 'ppc') {
+    return [
+      { value: 'rtl8139', label: 'rtl8139' },
+      { value: 'pcnet', label: 'pcnet' }
+    ] as Array<{ value: string; label: string }>;
+  }
+  return networkCardOptions;
+}
+
+function diskInterfaceOptionsForMachine(machine: SakaMachine) {
+  if (machine.system.arch === 'aarch64' || machine.system.arch === 'arm' || machine.system.arch === 'riscv64' || machine.system.arch === 'ppc64') {
+    return [
+      { value: 'scsi', label: 'SCSI (兼容性)' },
+      { value: 'virtio', label: 'VirtIO (快，需驱动)' }
+    ] as Array<{ value: DiskInterface; label: string }>;
+  }
+  if (machine.system.arch === 'ppc') {
+    return [
+      { value: 'ide', label: 'IDE (兼容性)' },
+      { value: 'scsi', label: 'SCSI (冷门)' }
+    ] as Array<{ value: DiskInterface; label: string }>;
+  }
+  return diskInterfaceOptions;
+}
+
+function supportsUefiForMachine(machine: SakaMachine) {
+  return (machine.system.arch === 'x86_64' && machine.template.key !== 'win98') ||
+    (machine.system.arch === 'aarch64' && machine.system.machine_type === 'virt');
+}
+
 function defaultDiskInterfaceForMachine(machine: SakaMachine): DiskInterface {
+  if (machine.template.key === 'custom') {
+    return 'sata';
+  }
+  if (machine.template.key === 'linux') {
+    return linuxArchDefaults(machine.system.arch).diskInterface;
+  }
   if (machine.template.key === 'win98' || machine.template.key === 'winxp') {
     return 'ide';
   }
@@ -237,16 +513,32 @@ export function MachineBuilderPage() {
 
   const warnings = useMemo(() => (draft ? collectMachineWarnings(draft.machine) : []), [draft]);
   const machine = draft?.machine ?? null;
+  const isCustomTemplate = machine?.template.key === 'custom';
   const machineTypeOptions = useMemo(() => {
+    if (isCustomTemplate && machine?.system.arch === 'none') {
+      return fallbackMachineTypeOptions;
+    }
     const arch = machine?.system.arch;
     if (arch === 'x86_64' || arch === 'i386') {
       return x86MachineTypeOptions;
     }
-    if (arch === 'aarch64' || arch === 'arm') {
+    if (arch === 'aarch64') {
+      return aarch64MachineTypeOptions;
+    }
+    if (arch === 'arm') {
       return armMachineTypeOptions;
     }
+    if (arch === 'riscv64') {
+      return riscvMachineTypeOptions;
+    }
+    if (arch === 'ppc') {
+      return ppcMachineTypeOptions;
+    }
+    if (arch === 'ppc64') {
+      return ppc64MachineTypeOptions;
+    }
     return fallbackMachineTypeOptions;
-  }, [machine?.system.arch]);
+  }, [isCustomTemplate, machine?.system.arch]);
   const acceleratorOptions = getSupportedAccelerators({
     hostArch,
     guestArch: machine?.system.arch,
@@ -255,8 +547,15 @@ export function MachineBuilderPage() {
     value: SakaMachine['system']['accelerator'];
     label: string;
   }>;
+  const visibleArchOptions = isCustomTemplate ? customArchOptions : archOptions;
+  const visibleGpuOptions = machine ? gpuOptionsForMachine(machine) : x86GpuOptions;
+  const visibleNetworkCardOptions = machine ? networkCardOptionsForMachine(machine) : networkCardOptions;
+  const visibleDiskInterfaceOptions = machine ? diskInterfaceOptionsForMachine(machine) : diskInterfaceOptions;
+  const visibleSoundOptions = isCustomTemplate ? customSoundOptions : soundOptions;
   const selectedAccelerator = machine?.system.accelerator ?? null;
   const selectedMachineType = machine?.system.machine_type ?? null;
+  const selectedGpu = machine?.display.gpu ?? null;
+  const previousLinuxArchRef = useRef<SakaMachine['system']['arch'] | null>(null);
 
   useEffect(() => {
     if (!machine || !selectedAccelerator) {
@@ -286,6 +585,35 @@ export function MachineBuilderPage() {
       return;
     }
 
+    if (machine.template.key === 'linux') {
+      if (previousLinuxArchRef.current !== machine.system.arch) {
+        previousLinuxArchRef.current = machine.system.arch;
+        const defaults = linuxArchDefaults(machine.system.arch);
+        updateDraft((current) => ({
+          ...current,
+          system: {
+            ...current.system,
+            machine_type: defaults.machineType,
+            accelerator: defaults.accelerator,
+            sound_card: defaults.soundCard
+          },
+          network: {
+            ...current.network,
+            enabled: defaults.networkEnabled,
+            card: defaults.networkCard
+          },
+          disks: current.disks.map((disk, index) =>
+            index === 0 && disk.interface !== defaults.diskInterface
+              ? { ...disk, interface: defaults.diskInterface }
+              : disk
+          )
+        }));
+      }
+      return;
+    }
+
+    previousLinuxArchRef.current = null;
+
     if (machineTypeOptions.some((option) => option.value === selectedMachineType)) {
       return;
     }
@@ -303,6 +631,29 @@ export function MachineBuilderPage() {
       }
     }));
   }, [machine, machineTypeOptions, selectedMachineType, updateDraft]);
+
+  useEffect(() => {
+    if (!machine || !selectedGpu) {
+      return;
+    }
+
+    if (visibleGpuOptions.some((option: { value: string; label: string }) => option.value === selectedGpu)) {
+      return;
+    }
+
+    const fallback = visibleGpuOptions[0]?.value;
+    if (!fallback) {
+      return;
+    }
+
+    updateDraft((current) => ({
+      ...current,
+      display: {
+        ...current.display,
+        gpu: fallback
+      }
+    }));
+  }, [machine, selectedGpu, updateDraft, visibleGpuOptions]);
 
   useEffect(() => {
     if (!machine) {
@@ -332,7 +683,7 @@ export function MachineBuilderPage() {
       return;
     }
 
-    if (machine.template.key === 'win98' || machine.system.arch !== 'x86_64') {
+    if (!supportsUefiForMachine(machine)) {
       updateDraft((current) => ({
         ...current,
         system: {
@@ -352,7 +703,7 @@ export function MachineBuilderPage() {
   const displayHint = makeDisplayHint(machine);
   const defaultMachineLocation = settings.defaultSaveDirectory || appMeta?.defaultMachineDirectory || '';
   const defaultDiskInterface = defaultDiskInterfaceForMachine(machine);
-  const supportsUefi = machine.system.arch === 'x86_64' && machine.template.key !== 'win98';
+  const supportsUefi = supportsUefiForMachine(machine);
 
   const saveAndOpenDetails = async () => {
     const titleToSave = uniqueTitle || machine.title;
@@ -528,7 +879,7 @@ export function MachineBuilderPage() {
                         <MaterialSelect
                           label={t('builder.labels.diskInterface')}
                           value={disk.interface}
-                          options={diskInterfaceOptions}
+                          options={visibleDiskInterfaceOptions}
                           onChange={(nextValue: DiskInterface) =>
                             updateDraft((current) => ({
                               ...current,
@@ -576,7 +927,7 @@ export function MachineBuilderPage() {
                 <MaterialSelect
                   label={t('builder.labels.arch')}
                   value={machine.system.arch}
-                  options={archOptions}
+                  options={visibleArchOptions}
                   onChange={(nextValue: SakaMachine['system']['arch']) => updateDraft((current) => ({ ...current, system: { ...current.system, arch: nextValue } }))}
                 />
               </div>
@@ -648,7 +999,7 @@ export function MachineBuilderPage() {
                 <MaterialSelect
                   label={t('builder.labels.soundCard')}
                   value={machine.system.sound_card}
-                  options={soundOptions}
+                  options={visibleSoundOptions}
                   onChange={(nextValue: string) => updateDraft((current) => ({ ...current, system: { ...current.system, sound_card: nextValue } }))}
                 />
               </div>
@@ -657,7 +1008,7 @@ export function MachineBuilderPage() {
                 <MaterialSelect
                   label={t('builder.labels.gpu')}
                   value={machine.display.gpu}
-                  options={gpuOptions}
+                  options={visibleGpuOptions}
                   onChange={(nextValue: string) => updateDraft((current) => ({ ...current, display: { ...current.display, gpu: nextValue } }))}
                 />
               </div>
@@ -730,7 +1081,7 @@ export function MachineBuilderPage() {
                     <MaterialSelect
                       label={t('builder.labels.networkCard')}
                       value={machine.network.card}
-                      options={networkCardOptions}
+                      options={visibleNetworkCardOptions}
                       onChange={(nextValue: string) => updateDraft((current) => ({ ...current, network: { ...current.network, card: nextValue } }))}
                     />
                   </div>
@@ -788,7 +1139,177 @@ export function MachineBuilderPage() {
                   </span>
                 </div>
               </div>
-              <div className="form-row-align">
+
+              {machine.system.uefi && supportsUefi && (
+                <div className="firmware-config" style={{ marginTop: '16px', padding: '16px', background: 'var(--panel-muted)', borderRadius: '8px' }}>
+                  <div className="form-row-align" style={{ marginBottom: '12px' }}>
+                    <span className="field__label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '18px', height: '18px', display: 'inline-flex' }}><FirmwareIcon /></span>
+                      {t('builder.labels.firmwareSource')}
+                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        className={!machine.advanced.firmware?.code_path ? 'button button--primary' : 'button button--secondary'}
+                        type="button"
+                        onClick={() => updateDraft((current) => ({
+                          ...current,
+                          advanced: {
+                            ...current.advanced,
+                            firmware: { code_path: '', vars_path: '' }
+                          }
+                        }))}
+                      >
+                        {t('builder.firmware.auto')}
+                      </button>
+                      <button
+                        className={machine.advanced.firmware?.code_path ? 'button button--primary' : 'button button--secondary'}
+                        type="button"
+                        onClick={() => updateDraft((current) => ({
+                          ...current,
+                          advanced: {
+                            ...current.advanced,
+                            firmware: { code_path: current.advanced.firmware?.code_path || '', vars_path: current.advanced.firmware?.vars_path || '' }
+                          }
+                        }))}
+                      >
+                        {t('builder.firmware.custom')}
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="field__hint" style={{ marginBottom: '16px', fontSize: '0.85rem' }}>
+                    {!machine.advanced.firmware?.code_path
+                      ? t('builder.descriptions.firmwareAuto')
+                      : !machine.advanced.firmware?.vars_path
+                        ? t('builder.descriptions.firmwareCodeOnly')
+                        : t('builder.descriptions.firmwareCustom')}
+                  </p>
+
+                  {machine.advanced.firmware?.code_path !== undefined && (
+                    <>
+                      <div className="form-row-align form-row-align--top" style={{ marginBottom: '12px' }}>
+                        <span className="field__label">{t('builder.labels.firmwareCode')}</span>
+                        <div className="path-picker-card" style={{ flex: 1 }}>
+                          <span className="path-picker-card__icon">
+                            <FileIcon />
+                          </span>
+                          <span className={`path-picker-card__path ${!machine.advanced.firmware.code_path ? 'path-picker-card__path--empty' : ''}`}>
+                            {machine.advanced.firmware.code_path
+                              ? machine.advanced.firmware.code_path.split(/[/\\]/).pop()
+                              : t('builder.descriptions.noFirmwareCode')}
+                          </span>
+                          <div className="path-picker-card__actions">
+                            <button
+                              className="button button--secondary path-picker-card__button"
+                              type="button"
+                              onClick={async () => {
+                                const picked = await window.electronAPI.dialogs.pickFirmwareCode();
+                                if (!picked?.path) return;
+                                updateDraft((current) => ({
+                                  ...current,
+                                  advanced: {
+                                    ...current.advanced,
+                                    firmware: {
+                                      vars_path: current.advanced.firmware?.vars_path || '',
+                                      code_path: picked.path
+                                    }
+                                  }
+                                }));
+                              }}
+                            >
+                              {t('builder.actions.pickFile')}
+                            </button>
+                            {machine.advanced.firmware.code_path && (
+                              <button
+                                className="button button--ghost path-picker-card__button"
+                                type="button"
+                                onClick={() => updateDraft((current) => ({
+                                  ...current,
+                                  advanced: {
+                                    ...current.advanced,
+                                    firmware: {
+                                      code_path: '',
+                                      vars_path: current.advanced.firmware?.vars_path || ''
+                                    }
+                                  }
+                                }))}
+                              >
+                                {t('builder.actions.clear')}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {machine.advanced.firmware.code_path && (
+                        <span className="field__hint" style={{ display: 'block', marginBottom: '12px', fontSize: '0.78rem', wordBreak: 'break-all' }}>
+                          {machine.advanced.firmware.code_path}
+                        </span>
+                      )}
+
+                      <div className="form-row-align form-row-align--top">
+                        <span className="field__label">{t('builder.labels.firmwareVars')}</span>
+                        <div className="path-picker-card" style={{ flex: 1 }}>
+                          <span className="path-picker-card__icon">
+                            <FileIcon />
+                          </span>
+                          <span className={`path-picker-card__path ${!machine.advanced.firmware.vars_path ? 'path-picker-card__path--empty' : ''}`}>
+                            {machine.advanced.firmware.vars_path
+                              ? machine.advanced.firmware.vars_path.split(/[/\\]/).pop()
+                              : t('builder.descriptions.noFirmwareVars')}
+                          </span>
+                          <div className="path-picker-card__actions">
+                            <button
+                              className="button button--secondary path-picker-card__button"
+                              type="button"
+                              onClick={async () => {
+                                const picked = await window.electronAPI.dialogs.pickFirmwareVars();
+                                if (!picked?.path) return;
+                                updateDraft((current) => ({
+                                  ...current,
+                                  advanced: {
+                                    ...current.advanced,
+                                    firmware: {
+                                      code_path: current.advanced.firmware?.code_path || '',
+                                      vars_path: picked.path
+                                    }
+                                  }
+                                }));
+                              }}
+                            >
+                              {t('builder.actions.pickFile')}
+                            </button>
+                            {machine.advanced.firmware.vars_path && (
+                              <button
+                                className="button button--ghost path-picker-card__button"
+                                type="button"
+                                onClick={() => updateDraft((current) => ({
+                                  ...current,
+                                  advanced: {
+                                    ...current.advanced,
+                                    firmware: {
+                                      code_path: current.advanced.firmware?.code_path || '',
+                                      vars_path: ''
+                                    }
+                                  }
+                                }))}
+                              >
+                                {t('builder.actions.clear')}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {machine.advanced.firmware.vars_path && (
+                        <span className="field__hint" style={{ display: 'block', marginTop: '8px', fontSize: '0.78rem', wordBreak: 'break-all' }}>
+                          {machine.advanced.firmware.vars_path}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              <div className="form-row-align" style={{ marginTop: '16px' }}>
                 <span className="field__label">{t('builder.labels.audioBackend')}</span>
                 <MaterialSelect
                   label={t('builder.labels.audioBackend')}

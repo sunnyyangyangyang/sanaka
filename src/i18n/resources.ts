@@ -80,6 +80,9 @@ export const resources = {
         usbTablet: 'USB-tablet 鼠标',
         mouseAlignment: 'USB-tablet 鼠标',
         clipboardSharing: '共享剪贴板',
+        firmwareSource: '固件来源',
+        firmwareCode: 'CODE 固件文件',
+        firmwareVars: 'VARS 文件（可选）',
         networkEnabled: '启用网络',
         networkMode: '网络模式',
         networkCard: '网卡类型',
@@ -97,7 +100,12 @@ export const resources = {
         boot: '选择启动顺序、镜像和磁盘。',
         hardware: '调整这台虚拟机的常用硬件选项。',
         experience: '优化虚拟机使用体验。',
-        clipboardSharingHint: '本功能需要安装 Sanaka 增强功能程序。请在虚拟机控制台的“更多”菜单中选择“安装 Sanaka 增强功能程序”。目前仅支持 Windows（XP 及以上），且当前仅支持文本剪贴板。',
+        clipboardSharingHint: '本功能需要安装 Sanaka 增强功能程序。请在虚拟机控制台的"更多"菜单中选择"安装 Sanaka 增强功能程序"。目前仅支持 Windows（XP 及以上），且当前仅支持文本剪贴板。',
+        firmwareAuto: 'Sanaka 将尝试自动查找可用的 UEFI 固件。',
+        firmwareCodeOnly: '将使用你指定的固件文件启动。未指定 VARS 文件时，某些固件不会保存启动变量。',
+        firmwareCustom: '将使用你指定的 UEFI 固件和变量文件启动。',
+        noFirmwareCode: '尚未选择 CODE 固件',
+        noFirmwareVars: '尚未选择 VARS 文件',
         networkDisplay: '设置网络与显示方式。',
         advanced: '需要时可填写额外启动参数。',
         templateBuiltIn: '内建模板',
@@ -131,7 +139,13 @@ export const resources = {
       actions: {
         pickIso: '选择 ISO / IMG',
         clearIso: '清除',
-        saveAs: '另存到其他位置'
+        saveAs: '另存到其他位置',
+        pickFile: '选择文件',
+        clear: '清除'
+      },
+      firmware: {
+        auto: '自动查找',
+        custom: '自定义'
       },
       bootOptions: {
         none: '默认',
@@ -577,6 +591,9 @@ export const resources = {
         usbTablet: 'USB-tablet Mouse',
         mouseAlignment: 'USB-tablet Mouse',
         clipboardSharing: 'Shared Clipboard',
+        firmwareSource: 'Firmware Source',
+        firmwareCode: 'CODE Firmware File',
+        firmwareVars: 'VARS File (Optional)',
         networkEnabled: 'Enable Network',
         networkMode: 'Network Mode',
         networkCard: 'Network Card',
@@ -595,6 +612,11 @@ export const resources = {
         hardware: 'Adjust the common hardware options for this machine.',
         experience: 'Tune how the machine feels to use.',
         clipboardSharingHint: 'This feature requires the Sanaka guest enhancement tools. In the VM console, open the "More" menu and select "Install Sanaka Guest Enhancements". Windows (XP and above) only. Text clipboard only in this version.',
+        firmwareAuto: 'Sanaka will try to automatically find an available UEFI firmware.',
+        firmwareCodeOnly: 'Will boot using your specified firmware file. Some firmware may not save boot variables when VARS file is not specified.',
+        firmwareCustom: 'Will boot using your specified UEFI firmware and variables file.',
+        noFirmwareCode: 'No CODE firmware selected',
+        noFirmwareVars: 'No VARS file selected',
         networkDisplay: 'Set networking and display behavior.',
         advanced: 'Add extra launch arguments when needed.',
         templateBuiltIn: 'Built-in template',
@@ -628,7 +650,13 @@ export const resources = {
       actions: {
         pickIso: 'Choose ISO / IMG',
         clearIso: 'Clear',
-        saveAs: 'Save Somewhere Else'
+        saveAs: 'Save Somewhere Else',
+        pickFile: 'Select File',
+        clear: 'Clear'
+      },
+      firmware: {
+        auto: 'Auto',
+        custom: 'Custom'
       },
       bootOptions: {
         none: 'Default',

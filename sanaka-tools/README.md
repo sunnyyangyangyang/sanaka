@@ -53,13 +53,18 @@ sanaka-tools/linux/
 
 - 当前 Linux 版已带一个原生 C 客户端实现
 - 图形剪贴板优先尝试 `wl-paste/wl-copy`、`xclip`、`xsel`
+- 纯控制台 Linux 会尝试把宿主机文本注入当前活动 tty
 - 已能生成 `iso/sanaka-tools-linux.iso`
 - Linux 工具镜像可以同时放 `amd64` / `aarch64` 两个二进制，安装时自动选择
-- 如果客户机没有图形剪贴板服务，程序仍会常驻，但同步能力会受限
+- 纯控制台 Linux 当前重点保证 `宿主机 -> 客户机` 文本可用
 - Linux 客户机程序现在已经实现了 bootstrap / bridge 协议，不再只是占位 stub
-- Linux 原生构建：`sh sanaka-tools/linux/build.sh`
-- Linux 双架构一键构建：`SANAKA_TARGET_ARCH=all sh sanaka-tools/linux/build.sh`
-- macOS 上可尝试：`sh sanaka-tools/linux/build-podman.sh`
+- Linux 安装器会带上 `doctor.sh`，`start.sh` 每次启动前都会自动跑一次修复
+- Linux `doctor.sh` 在交互终端里会先询问是否安装缺失依赖，非交互场景只记录日志
+- Linux shell 文案已支持 `zh-CN` / `en-US`，且在非 UTF-8 中文环境下默认回退英文
+- Linux 原生构建：`sh sanaka-tools/linux/src/build.sh`
+- Linux 双架构一键构建：`SANAKA_TARGET_ARCH=all sh sanaka-tools/linux/src/build.sh`
+- macOS 上可直接用 `zig cc` 交叉编译这两个 Linux ELF
+- macOS 如不想装 `zig`，也可尝试：`sh sanaka-tools/linux/src/build-podman.sh`
 
 ## 本地构建
 

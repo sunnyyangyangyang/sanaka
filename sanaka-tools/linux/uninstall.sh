@@ -2,6 +2,10 @@
 
 set -eu
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/lib/i18n.sh"
+sanaka_load_i18n "$SCRIPT_DIR/locales"
+
 INSTALL_ROOT="${HOME}/.local/share/sanaka-tools"
 AUTOSTART_FILE="${HOME}/.config/autostart/sanaka.desktop"
 MARKER_BEGIN="# >>> sanaka clipboard start >>>"
@@ -18,7 +22,7 @@ remove_markers_from_file() {
   ' "$file_path" > "$tmp_file" && mv "$tmp_file" "$file_path"
 }
 
-printf '%s\n' "Sanaka Linux 增强功能卸载程序"
+sanaka_printf_ln "linux.uninstall.app_name"
 
 rm -rf "$INSTALL_ROOT"
 rm -f "$AUTOSTART_FILE"
@@ -28,5 +32,5 @@ remove_markers_from_file "${HOME}/.bash_profile"
 remove_markers_from_file "${HOME}/.bashrc"
 remove_markers_from_file "${HOME}/.zprofile"
 
-printf '%s\n' "已删除安装目录和自启动项。"
-printf '%s\n' "如果程序当前还在运行，请重新登录或手动结束进程。"
+sanaka_printf_ln "linux.uninstall.done_1"
+sanaka_printf_ln "linux.uninstall.done_2"

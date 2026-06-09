@@ -3,7 +3,7 @@
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
-ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR" && pwd)
+ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 SOURCE="$ROOT_DIR/src/sanaka_clipboard_linux.c"
 HOST_OS=$(uname -s)
 HOST_ARCH=$(uname -m)
@@ -41,6 +41,12 @@ ensure_package() {
 
 ensure_toolchain_for_arch() {
   target=$1
+  if [ "$HOST_OS" = "Darwin" ]; then
+    if command -v zig >/dev/null 2>&1; then
+      return 0
+    fi
+    fail "当前是 macOS，缺少 zig。请先安装 zig，或改在 Linux 上构建。"
+  fi
   if ! is_debian_like; then
     return 0
   fi
@@ -61,6 +67,10 @@ resolve_cc_for_arch() {
     printf '%s\n' "$CC"
     return 0
   fi
+  if [ "$HOST_OS" = "Darwin" ]; then
+    printf '%s\n' "zig"
+    return 0
+  fi
   case "$target" in
     x86_64|amd64)
       printf '%s\n' "cc"
@@ -70,6 +80,25 @@ resolve_cc_for_arch() {
       ;;
     *)
       printf '%s\n' "cc"
+      ;;
+  esac
+}
+
+resolve_target_cflags_for_arch() {
+  target=$1
+  if [ "$HOST_OS" != "Darwin" ]; then
+    printf '%s\n' ""
+    return 0
+  fi
+  case "$target" in
+    x86_64|amd64)
+      printf '%s\n' "-target x86_64-linux-musl"
+      ;;
+    aarch64|arm64)
+      printf '%s\n' "-target aarch64-linux-musl"
+      ;;
+    *)
+      printf '%s\n' ""
       ;;
   esac
 }
@@ -92,6 +121,7 @@ install_name_for_arch() {
 build_one() {
   target=$1
   cc_bin=$(resolve_cc_for_arch "$target")
+  target_cflags=$(resolve_target_cflags_for_arch "$target")
   output_path=${2:-"$BUILD_DIR/sanaka-clipboard-Linux-$target"}
 
   ensure_toolchain_for_arch "$target"
@@ -99,20 +129,19 @@ build_one() {
   log "Building Linux clipboard client for $target with: $cc_bin"
   mkdir -p "$BUILD_DIR"
 
-  "$cc_bin" -std=c99 -O2 -Wall -Wextra -pedantic $CFLAGS_EXTRA -o "$output_path" "$SOURCE"
+  if [ "$HOST_OS" = "Darwin" ]; then
+    "$cc_bin" cc -std=c99 -O2 -Wall -Wextra -pedantic $target_cflags $CFLAGS_EXTRA -o "$output_path" "$SOURCE"
+  else
+    "$cc_bin" -std=c99 -O2 -Wall -Wextra -pedantic $CFLAGS_EXTRA -o "$output_path" "$SOURCE"
+  fi
 
   chmod +x "$output_path"
   log "Built: $output_path"
 
-  if [ "$HOST_OS" = "Linux" ]; then
-    install_name=$(install_name_for_arch "$target")
-    cp "$output_path" "$ROOT_DIR/bin/$install_name"
-    chmod +x "$ROOT_DIR/bin/$install_name"
-    log "Installed Linux payload: $ROOT_DIR/bin/$install_name"
-  else
-    log "当前不是 Linux 主机，未覆盖 ISO 里的 bin/sanaka-clipboard-*。"
-    log "如果要产出真正可打包的 Linux 二进制，请在 Linux 上构建，或运行 Podman 交叉构建脚本。"
-  fi
+  install_name=$(install_name_for_arch "$target")
+  cp "$output_path" "$ROOT_DIR/bin/$install_name"
+  chmod +x "$ROOT_DIR/bin/$install_name"
+  log "Installed Linux payload: $ROOT_DIR/bin/$install_name"
 }
 
 if [ "$TARGET_ARCH" = "all" ]; then

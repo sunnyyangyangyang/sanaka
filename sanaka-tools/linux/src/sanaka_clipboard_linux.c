@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -47,6 +48,9 @@ typedef struct SanakaStateTag {
   char current_mac[32];
   char runtime_dir[1024];
   char log_path[1024];
+  char read_backend_name[64];
+  char write_backend_name[128];
+  char active_tty_path[256];
   SanakaConfig config;
 } SanakaState;
 
@@ -105,6 +109,60 @@ static void sanaka_copy_string(char *dest, size_t dest_size, const char *src) {
     index++;
   }
   dest[index] = '\0';
+}
+
+static int sanaka_file_exists(const char *file_path) {
+  return file_path != NULL && access(file_path, F_OK) == 0;
+}
+
+static int sanaka_is_executable(const char *file_path) {
+  return file_path != NULL && access(file_path, X_OK) == 0;
+}
+
+static int sanaka_command_exists(const char *command_name) {
+  const char *path_env;
+  char buffer[1024];
+  const char *cursor;
+  const char *segment_start;
+  size_t segment_length;
+
+  if (command_name == NULL || command_name[0] == '\0') {
+    return 0;
+  }
+  if (strchr(command_name, '/') != NULL) {
+    return sanaka_is_executable(command_name);
+  }
+
+  path_env = getenv("PATH");
+  if (path_env == NULL || path_env[0] == '\0') {
+    return 0;
+  }
+
+  cursor = path_env;
+  segment_start = cursor;
+  while (1) {
+    if (*cursor == ':' || *cursor == '\0') {
+      segment_length = (size_t) (cursor - segment_start);
+      if (segment_length == 0) {
+        segment_start = ".";
+        segment_length = 1;
+      }
+      if (segment_length + 1 + strlen(command_name) + 1 < sizeof(buffer)) {
+        memcpy(buffer, segment_start, segment_length);
+        buffer[segment_length] = '/';
+        strcpy(buffer + segment_length + 1, command_name);
+        if (sanaka_is_executable(buffer)) {
+          return 1;
+        }
+      }
+      if (*cursor == '\0') {
+        break;
+      }
+      segment_start = cursor + 1;
+    }
+    cursor++;
+  }
+  return 0;
 }
 
 static void sanaka_prepare_paths(SanakaState *state) {
@@ -172,6 +230,107 @@ static void sanaka_log_line(const char *format, ...) {
   va_end(args);
   fputc('\n', file);
   fclose(file);
+}
+
+static int sanaka_has_wayland_session(void) {
+  return getenv("WAYLAND_DISPLAY") != NULL || getenv("WAYLAND_SOCKET") != NULL;
+}
+
+static int sanaka_has_x11_session(void) {
+  return getenv("DISPLAY") != NULL;
+}
+
+static int sanaka_detect_active_tty(char *buffer, size_t buffer_size) {
+  FILE *file;
+  char tty_name[128];
+  const char *tty_env;
+  char *resolved;
+
+  if (buffer == NULL || buffer_size == 0) {
+    return 0;
+  }
+  buffer[0] = '\0';
+
+  file = fopen("/sys/class/tty/tty0/active", "r");
+  if (file != NULL) {
+    if (fgets(tty_name, sizeof(tty_name), file) != NULL) {
+      sanaka_trim(tty_name);
+      if (tty_name[0] != '\0' && snprintf(buffer, buffer_size, "/dev/%s", tty_name) < (int) buffer_size && sanaka_file_exists(buffer)) {
+        fclose(file);
+        return 1;
+      }
+    }
+    fclose(file);
+  }
+
+  tty_env = getenv("XDG_VTNR");
+  if (tty_env != NULL && tty_env[0] != '\0') {
+    if (snprintf(buffer, buffer_size, "/dev/tty%s", tty_env) < (int) buffer_size && sanaka_file_exists(buffer)) {
+      return 1;
+    }
+  }
+
+  resolved = ttyname(STDIN_FILENO);
+  if (resolved != NULL && strncmp(resolved, "/dev/tty", 8) == 0 && sanaka_file_exists(resolved)) {
+    sanaka_copy_string(buffer, buffer_size, resolved);
+    return 1;
+  }
+
+  resolved = ttyname(STDOUT_FILENO);
+  if (resolved != NULL && strncmp(resolved, "/dev/tty", 8) == 0 && sanaka_file_exists(resolved)) {
+    sanaka_copy_string(buffer, buffer_size, resolved);
+    return 1;
+  }
+
+  resolved = ttyname(STDERR_FILENO);
+  if (resolved != NULL && strncmp(resolved, "/dev/tty", 8) == 0 && sanaka_file_exists(resolved)) {
+    sanaka_copy_string(buffer, buffer_size, resolved);
+    return 1;
+  }
+
+  return 0;
+}
+
+static void sanaka_detect_backend_summary(SanakaState *state) {
+  char tty_path[256];
+  if (state == NULL) {
+    return;
+  }
+
+  sanaka_copy_string(state->read_backend_name, sizeof(state->read_backend_name), "none");
+  sanaka_copy_string(state->write_backend_name, sizeof(state->write_backend_name), "none");
+  state->active_tty_path[0] = '\0';
+
+  if (sanaka_has_wayland_session() && sanaka_command_exists("wl-paste")) {
+    sanaka_copy_string(state->read_backend_name, sizeof(state->read_backend_name), "wl-paste");
+  } else if (sanaka_has_x11_session() && sanaka_command_exists("xclip")) {
+    sanaka_copy_string(state->read_backend_name, sizeof(state->read_backend_name), "xclip");
+  } else if (sanaka_has_x11_session() && sanaka_command_exists("xsel")) {
+    sanaka_copy_string(state->read_backend_name, sizeof(state->read_backend_name), "xsel");
+  }
+
+  if (sanaka_has_wayland_session() && sanaka_command_exists("wl-copy")) {
+    sanaka_copy_string(state->write_backend_name, sizeof(state->write_backend_name), "wl-copy");
+  } else if (sanaka_has_x11_session() && sanaka_command_exists("xclip")) {
+    sanaka_copy_string(state->write_backend_name, sizeof(state->write_backend_name), "xclip");
+  } else if (sanaka_has_x11_session() && sanaka_command_exists("xsel")) {
+    sanaka_copy_string(state->write_backend_name, sizeof(state->write_backend_name), "xsel");
+  } else if (sanaka_detect_active_tty(tty_path, sizeof(tty_path))) {
+    sanaka_copy_string(state->active_tty_path, sizeof(state->active_tty_path), tty_path);
+    if (sanaka_file_exists("/dev/gpmctl")) {
+      snprintf(state->write_backend_name, sizeof(state->write_backend_name), "tty-inject (%s, gpmctl present)", tty_path);
+    } else {
+      snprintf(state->write_backend_name, sizeof(state->write_backend_name), "tty-inject (%s)", tty_path);
+    }
+  }
+}
+
+static void sanaka_log_backend_summary(SanakaState *state) {
+  if (state == NULL) {
+    return;
+  }
+  sanaka_log_line("read backend: %s", state->read_backend_name);
+  sanaka_log_line("write backend: %s", state->write_backend_name);
 }
 
 static void sanaka_hash_text(const char *text, char output[16]) {
@@ -415,45 +574,117 @@ static int sanaka_run_command_capture(const char *command, char *buffer, size_t 
 }
 
 static int sanaka_read_clipboard_text(char *buffer, size_t buffer_size) {
-  const char *commands[] = {
-    "wl-paste --no-newline 2>/dev/null",
-    "xclip -selection clipboard -out 2>/dev/null",
-    "xsel --clipboard --output 2>/dev/null",
-    NULL
-  };
   char temp[SANAKA_MAX_TEXT_BYTES];
-  int index = 0;
-  while (commands[index] != NULL) {
-    if (sanaka_run_command_capture(commands[index], temp, sizeof(temp))) {
+  if (sanaka_has_wayland_session() && sanaka_command_exists("wl-paste")) {
+    if (sanaka_run_command_capture("wl-paste --no-newline 2>/dev/null", temp, sizeof(temp))) {
       sanaka_copy_string(buffer, buffer_size, temp);
       return 1;
     }
-    index++;
+  }
+  if (sanaka_has_x11_session() && sanaka_command_exists("xclip")) {
+    if (sanaka_run_command_capture("xclip -selection clipboard -out 2>/dev/null", temp, sizeof(temp))) {
+      sanaka_copy_string(buffer, buffer_size, temp);
+      return 1;
+    }
+  }
+  if (sanaka_has_x11_session() && sanaka_command_exists("xsel")) {
+    if (sanaka_run_command_capture("xsel --clipboard --output 2>/dev/null", temp, sizeof(temp))) {
+      sanaka_copy_string(buffer, buffer_size, temp);
+      return 1;
+    }
   }
   return 0;
 }
 
-static int sanaka_write_clipboard_text(const char *text) {
+static int sanaka_write_tty_text(const char *text, char *used_tty_path, size_t used_tty_path_size) {
+  char tty_path[256];
+  int tty_fd;
+  const unsigned char *cursor;
+  if (text == NULL || text[0] == '\0') {
+    return 0;
+  }
+  if (!sanaka_detect_active_tty(tty_path, sizeof(tty_path))) {
+    return 0;
+  }
+  tty_fd = open(tty_path, O_RDWR | O_NOCTTY);
+  if (tty_fd < 0) {
+    return 0;
+  }
+  cursor = (const unsigned char *) text;
+  while (*cursor != 0U) {
+    char ch = (char) *cursor;
+    if (ch == '\n') {
+      ch = '\r';
+    }
+    if (ioctl(tty_fd, TIOCSTI, &ch) != 0) {
+      close(tty_fd);
+      return 0;
+    }
+    cursor++;
+  }
+  close(tty_fd);
+  if (used_tty_path != NULL && used_tty_path_size > 0) {
+    sanaka_copy_string(used_tty_path, used_tty_path_size, tty_path);
+  }
+  return 1;
+}
+
+static int sanaka_write_clipboard_text(const char *text, char *backend_used, size_t backend_used_size) {
   FILE *pipe;
-  const char *commands[] = {
-    "wl-copy 2>/dev/null",
-    "xclip -selection clipboard -in 2>/dev/null",
-    "xsel --clipboard --input 2>/dev/null",
-    NULL
-  };
-  int index = 0;
-  while (commands[index] != NULL) {
-    pipe = popen(commands[index], "w");
+  char tty_path[256];
+
+  if (backend_used != NULL && backend_used_size > 0) {
+    backend_used[0] = '\0';
+  }
+
+  if (sanaka_has_wayland_session() && sanaka_command_exists("wl-copy")) {
+    pipe = popen("wl-copy 2>/dev/null", "w");
     if (pipe != NULL) {
       size_t length = strlen(text);
       size_t written = fwrite(text, 1, length, pipe);
       int exit_code = pclose(pipe);
       if (written == length && exit_code == 0) {
+        sanaka_copy_string(backend_used, backend_used_size, "wl-copy");
         return 1;
       }
     }
-    index++;
   }
+
+  if (sanaka_has_x11_session() && sanaka_command_exists("xclip")) {
+    pipe = popen("xclip -selection clipboard -in 2>/dev/null", "w");
+    if (pipe != NULL) {
+      size_t length = strlen(text);
+      size_t written = fwrite(text, 1, length, pipe);
+      int exit_code = pclose(pipe);
+      if (written == length && exit_code == 0) {
+        sanaka_copy_string(backend_used, backend_used_size, "xclip");
+        return 1;
+      }
+    }
+  }
+
+  if (sanaka_has_x11_session() && sanaka_command_exists("xsel")) {
+    pipe = popen("xsel --clipboard --input 2>/dev/null", "w");
+    if (pipe != NULL) {
+      size_t length = strlen(text);
+      size_t written = fwrite(text, 1, length, pipe);
+      int exit_code = pclose(pipe);
+      if (written == length && exit_code == 0) {
+        sanaka_copy_string(backend_used, backend_used_size, "xsel");
+        return 1;
+      }
+    }
+  }
+
+  if (sanaka_write_tty_text(text, tty_path, sizeof(tty_path))) {
+    if (sanaka_file_exists("/dev/gpmctl")) {
+      snprintf(backend_used, backend_used_size, "tty-inject (%s, gpmctl present)", tty_path);
+    } else {
+      snprintf(backend_used, backend_used_size, "tty-inject (%s)", tty_path);
+    }
+    return 1;
+  }
+
   return 0;
 }
 
@@ -638,16 +869,18 @@ static int sanaka_recv_once(SanakaState *state) {
   buffer[received] = '\0';
   if (strstr(buffer, "\"type\":\"clipboard_push\"") != NULL) {
     char *text_buffer = (char *) malloc(SANAKA_MAX_TEXT_BYTES);
+    char backend_used[256];
     char hash[16];
     if (text_buffer == NULL) return 1;
+    backend_used[0] = '\0';
     if (sanaka_extract_json_string(buffer, "text", text_buffer, SANAKA_MAX_TEXT_BYTES)
       && sanaka_extract_json_string(buffer, "hash", hash, sizeof(hash))) {
-      if (sanaka_write_clipboard_text(text_buffer)) {
+      if (sanaka_write_clipboard_text(text_buffer, backend_used, sizeof(backend_used))) {
         sanaka_copy_string(state->last_remote_applied_hash, sizeof(state->last_remote_applied_hash), hash);
         sanaka_copy_string(state->last_local_hash, sizeof(state->last_local_hash), hash);
-        sanaka_log_line("clipboard_push applied to local clipboard");
+        sanaka_log_line("clipboard_push applied via %s", backend_used[0] != '\0' ? backend_used : "unknown-backend");
       } else {
-        sanaka_log_line("clipboard write skipped: no clipboard backend available");
+        sanaka_log_line("clipboard write skipped: no desktop backend and no active tty backend");
       }
     }
     free(text_buffer);
@@ -666,9 +899,11 @@ int main(void) {
   g_state.socket_fd = -1;
   sanaka_prepare_paths(&g_state);
   sanaka_load_config(&g_state.config);
+  sanaka_detect_backend_summary(&g_state);
   signal(SIGINT, sanaka_handle_signal);
   signal(SIGTERM, sanaka_handle_signal);
   sanaka_log_line("sanaka-clipboard start");
+  sanaka_log_backend_summary(&g_state);
 
   while (!g_should_exit) {
     now_ms = sanaka_now_ms();

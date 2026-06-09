@@ -34,4 +34,25 @@ describe('template machine creation', () => {
     expect(machine.network.card).toBe('rtl8139');
     expect(machine.display.gpu).toBe('std');
   });
+
+  it('creates a truly blank custom machine instead of pre-filling a hidden x86 setup', () => {
+    const machine = createMachineFromTemplate('custom');
+    expect(machine.template.label).toBe('Custom');
+    expect(machine.system.arch).toBe('none');
+    expect(machine.system.machine_type).toBe('none');
+    expect(machine.system.accelerator).toBe('none');
+    expect(machine.system.sound_card).toBe('none');
+    expect(machine.system.boot_order).toBe('none');
+    expect(machine.network.enabled).toBe(false);
+    expect(machine.network.card).toBe('none');
+    expect(machine.display.gpu).toBe('none');
+  });
+
+  it('uses compatibility-first defaults for the Linux template', () => {
+    const machine = createMachineFromTemplate('linux');
+    expect(machine.system.arch).toBe('x86_64');
+    expect(machine.system.machine_type).toBe('pc-q35-9.2');
+    expect(machine.network.card).toBe('e1000');
+    expect(machine.display.gpu).toBe('std');
+  });
 });

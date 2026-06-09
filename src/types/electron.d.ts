@@ -340,6 +340,8 @@ export interface ElectronApi {
     selectFolder: () => Promise<PickedPath | null>;
     pickDisk: () => Promise<PickedPath | null>;
     pickIso: () => Promise<PickedPath | null>;
+    pickFirmwareCode: () => Promise<PickedPath | null>;
+    pickFirmwareVars: () => Promise<PickedPath | null>;
   };
   disks: {
     getInfo: (imagePath: string) => Promise<DiskImageInfo>;

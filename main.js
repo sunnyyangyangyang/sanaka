@@ -710,6 +710,26 @@ const ipcHandlers = {
     });
     return selectedPath ? { path: selectedPath } : null;
   },
+  async pickFirmwareCode() {
+    const selectedPath = await openFileByDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'Firmware Files', extensions: ['fd', 'bin', 'rom', 'img'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    return selectedPath ? { path: selectedPath } : null;
+  },
+  async pickFirmwareVars() {
+    const selectedPath = await openFileByDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'Firmware Variable Files', extensions: ['fd', 'bin', 'rom', 'img'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    return selectedPath ? { path: selectedPath } : null;
+  },
   async loadSettings() {
     return readJsonFile(SETTINGS_FILE, null);
   },
@@ -884,6 +904,8 @@ app.whenReady().then(() => {
   ipcMain.handle('dialogs:select-folder', ipcHandlers.selectFolder);
   ipcMain.handle('dialogs:pick-disk', ipcHandlers.pickDisk);
   ipcMain.handle('dialogs:pick-iso', ipcHandlers.pickIso);
+  ipcMain.handle('dialogs:pick-firmware-code', ipcHandlers.pickFirmwareCode);
+  ipcMain.handle('dialogs:pick-firmware-vars', ipcHandlers.pickFirmwareVars);
   ipcMain.handle('disks:get-info', ipcHandlers.getDiskInfo);
   ipcMain.handle('disks:create', ipcHandlers.createDisk);
   ipcMain.handle('disks:prepare-managed', ipcHandlers.prepareManagedDisk);

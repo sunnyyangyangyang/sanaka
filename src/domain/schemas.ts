@@ -9,6 +9,8 @@ export const diskSizeUnitSchema = z.enum(['MB', 'GB']);
 export const diskInterfaceSchema = z.enum(['ide', 'scsi', 'sata', 'virtio']);
 export const sharedFolderModeSchema = z.enum(['readonly', 'readwrite']);
 export const clipboardBridgeModeSchema = z.enum(['text']);
+export const guestArchSchema = z.enum(['none', 'x86_64', 'i386', 'aarch64', 'arm', 'riscv64', 'ppc', 'ppc64']);
+export const acceleratorSchema = z.enum(['none', 'tcg', 'kvm', 'hax', 'whpx', 'hvf']);
 
 export const templateCatalogEntrySchema = z.object({
   key: z.string(),
@@ -75,9 +77,9 @@ export const sakaMachineSchema = z.object({
     .optional()
     .default({ notes: '', tags: [] }),
   system: z.object({
-    arch: z.enum(['x86_64', 'i386', 'aarch64', 'arm', 'riscv64', 'ppc', 'ppc64']),
+    arch: guestArchSchema,
     machine_type: z.string().default(''),
-    accelerator: z.enum(['tcg', 'kvm', 'hax', 'whpx', 'hvf']),
+    accelerator: acceleratorSchema,
     boot_order: z.enum(['none', 'cdrom', 'disk', 'floppy']),
     uefi: z.boolean().default(false),
     memory_mib: z.number().int().min(64).max(262144).default(2048),
@@ -168,7 +170,13 @@ export const sakaMachineSchema = z.object({
   }),
   advanced: z.object({
     audio_backend: z.enum(['auto', 'spice', 'pipewire', 'pulseaudio', 'coreaudio', 'directsound']).default('auto'),
-    qemu_args: z.string().default('')
+    qemu_args: z.string().default(''),
+    firmware: z
+      .object({
+        code_path: z.string().default(''),
+        vars_path: z.string().default('')
+      })
+      .optional()
   })
 });
 
