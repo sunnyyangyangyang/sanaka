@@ -15,6 +15,8 @@
 
 </div>
 
+<font color=red>WARNING：目前 Sanaka 还是早期测试版，可能有 BUG。</font>
+
 ## 💗特点
 
 | 超级跨平台！ | 统一界面 | 内置显示器 | 支持增强工具 |
@@ -105,3 +107,11 @@ bash scripts/doctor.sh
 </div>
 
 这是 **Sanaka SVM/SAKA 格式的机器包**：点击后，Sanaka就会立刻配置好虚拟机。
+
+## 开发模型
+
+使用 Vibe Coding 开发
+
+前端：Kimi/Gemini
+
+后端：GPT (ChatGPT)
