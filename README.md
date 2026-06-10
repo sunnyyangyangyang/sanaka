@@ -110,7 +110,7 @@ bash scripts/doctor.sh
 
 ## 开发模型
 
-使用 Vibe Coding 开发
+Vibe Coding 开发，使用 Codex 软件作为 Agent
 
 前端：Kimi/Gemini
 
