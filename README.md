@@ -25,7 +25,7 @@
 
 | macOS | Windows | Linux |
 | --- | --- | --- |
-| 至少 macOS 15 Sequoia | 至少 Windows 10 | 建议 QEMU 版本 >= 8.2.0 |
+| 至少 macOS 15 Sequoia & Apple Silicon | 至少 Windows 10 | 建议 QEMU 版本 >= 8.2.0 |
 
 ## 🚀 快速上手
 
