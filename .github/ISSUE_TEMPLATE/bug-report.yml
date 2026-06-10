@@ -1,0 +1,32 @@
+name: Bug Report
+description: Report a problem with Sanaka
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: input
+    id: operating_system
+    attributes:
+      label: 操作系统
+      description: 例如 macOS 15.7.5 / Windows 11 / Ubuntu 24.04
+      placeholder: macOS 15.7.5
+    validations:
+      required: true
+
+  - type: input
+    id: sanaka_version
+    attributes:
+      label: Sanaka 版本
+      description: 例如 0.0.3-beta
+      placeholder: 0.0.3-beta
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题
+      description: 请写清楚你遇到的问题
+      placeholder: 这里填写问题现象、复现方式、报错信息等
+    validations:
+      required: true
