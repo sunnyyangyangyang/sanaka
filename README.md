@@ -85,6 +85,7 @@ bash start.sh
 
 - [从零开始的构建指南](./docs/guides/从零开始的构建指南.md)
 - [给人的构建方法](./docs/guides/给人的构建方法.md)
+- [安装增强功能包](./docs/guides/安装增强包.md)
 - [感想](./docs/journal/感想.md)
 
 ## 🩺 环境修复
