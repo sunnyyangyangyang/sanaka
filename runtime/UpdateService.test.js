@@ -9,7 +9,7 @@ describe('UpdateService helpers', () => {
 
   it('compares release higher than beta prerelease', () => {
     expect(compareVersions('0.0.1', '0.0.1-beta')).toBeGreaterThan(0);
-    expect(compareVersions('0.0.2-beta', '0.0.1')).toBeGreaterThan(0);
+    expect(compareVersions('0.0.3-beta', '0.0.1')).toBeGreaterThan(0);
   });
 
   it('checks compatible channels', () => {
@@ -27,8 +27,8 @@ describe('UpdateService', () => {
       status: 200,
       text: async () =>
         url.includes('beta')
-          ? 'version = "0.0.2-beta"\nchannel = "beta"\nmandatory = false\npub_date = "2026-06-05"\nurl = "https://example.com/beta"\nnotes = """\nbeta\n"""'
-          : 'version = "0.0.2"\nchannel = "release"\nmandatory = false\npub_date = "2026-06-05"\nurl = "https://example.com/release"\nnotes = """\nrelease\n"""'
+          ? 'version = "0.0.3-beta"\nchannel = "beta"\nmandatory = false\npub_date = "2026-06-05"\nurl = "https://example.com/beta"\nnotes = """\nbeta\n"""'
+          : 'version = "0.0.3"\nchannel = "release"\nmandatory = false\npub_date = "2026-06-05"\nurl = "https://example.com/release"\nnotes = """\nrelease\n"""'
     }));
     const emitToRenderer = vi.fn();
     const service = new UpdateService({
@@ -42,7 +42,7 @@ describe('UpdateService', () => {
 
     const result = await service.checkForUpdates({ silent: true });
     expect(result.hasUpdate).toBe(true);
-    expect(result.latest?.version).toBe('0.0.2');
+    expect(result.latest?.version).toBe('0.0.3');
     expect(emitToRenderer).toHaveBeenCalledWith('app:update-available', expect.objectContaining({ source: 'automatic' }));
   });
 
@@ -50,12 +50,12 @@ describe('UpdateService', () => {
     const fetchImpl = vi.fn(async () => ({
       ok: true,
       status: 200,
-      text: async () => 'version = "0.0.2"\nchannel = "release"\nmandatory = false\npub_date = "2026-06-05"\nurl = "https://example.com/release"\nnotes = """\nrelease\n"""'
+      text: async () => 'version = "0.0.3"\nchannel = "release"\nmandatory = false\npub_date = "2026-06-05"\nurl = "https://example.com/release"\nnotes = """\nrelease\n"""'
     }));
     const emitToRenderer = vi.fn();
     const service = new UpdateService({
       appVersion: '0.0.1',
-      loadSettings: vi.fn(async () => ({ updates: { skippedVersion: '0.0.2' } })),
+      loadSettings: vi.fn(async () => ({ updates: { skippedVersion: '0.0.3' } })),
       saveSettings: vi.fn(async (value) => value),
       emitToRenderer,
       openExternal: vi.fn(async () => ({ ok: true })),
@@ -71,7 +71,7 @@ describe('UpdateService', () => {
     const fetchImpl = vi.fn(async () => ({
       ok: true,
       status: 200,
-      text: async () => 'version = "0.0.2"\nchannel = "release"\nmandatory = false\npub_date = "2026-06-05"\nurl = "https://example.com/release"\nnotes = """\nrelease\n"""'
+      text: async () => 'version = "0.0.3"\nchannel = "release"\nmandatory = false\npub_date = "2026-06-05"\nurl = "https://example.com/release"\nnotes = """\nrelease\n"""'
     }));
     const service = new UpdateService({
       appVersion: '0.0.1',

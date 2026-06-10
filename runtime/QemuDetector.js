@@ -80,15 +80,15 @@ async function readVersion(commandPath, execFileImpl) {
 
 function inferAccelerators(platform) {
   if (platform === 'darwin') {
-    return ['hvf', 'tcg'];
+    return ['hvf', 'tcg', 'mttcg'];
   }
   if (platform === 'linux') {
-    return ['kvm', 'tcg'];
+    return ['kvm', 'tcg', 'mttcg'];
   }
   if (platform === 'win32') {
-    return ['whpx', 'tcg'];
+    return ['whpx', 'tcg', 'mttcg'];
   }
-  return ['tcg'];
+  return ['tcg', 'mttcg'];
 }
 
 function makeInstallHint(platform) {

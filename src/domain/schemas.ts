@@ -10,7 +10,7 @@ export const diskInterfaceSchema = z.enum(['ide', 'scsi', 'sata', 'virtio']);
 export const sharedFolderModeSchema = z.enum(['readonly', 'readwrite']);
 export const clipboardBridgeModeSchema = z.enum(['text']);
 export const guestArchSchema = z.enum(['none', 'x86_64', 'i386', 'aarch64', 'arm', 'riscv64', 'ppc', 'ppc64']);
-export const acceleratorSchema = z.enum(['none', 'tcg', 'kvm', 'hax', 'whpx', 'hvf']);
+export const acceleratorSchema = z.enum(['none', 'tcg', 'mttcg', 'kvm', 'hax', 'whpx', 'hvf']);
 
 export const templateCatalogEntrySchema = z.object({
   key: z.string(),

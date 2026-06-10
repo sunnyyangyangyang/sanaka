@@ -101,6 +101,16 @@ function chooseAccelerator(requested, platform, guestArch, hostArch, availableAc
   return availableAccelerators.includes(platformDefault) ? platformDefault : 'tcg';
 }
 
+function mapAcceleratorArg(accelerator) {
+  if (accelerator === 'mttcg') {
+    return 'tcg,thread=multi';
+  }
+  if (!accelerator || accelerator === 'none') {
+    return 'tcg';
+  }
+  return accelerator;
+}
+
 function mapBootOrder(bootOrder) {
   if (bootOrder === 'cdrom') return 'd';
   if (bootOrder === 'disk') return 'c';
@@ -487,7 +497,7 @@ class QemuCommandBuilder {
       args.push('-global', 'apic.vapic=off');
     }
 
-    args.push('-accel', accelerator !== 'tcg' ? accelerator : 'tcg');
+    args.push('-accel', mapAcceleratorArg(accelerator));
 
     args.push('-m', String(machine.system?.memory_mib || 2048));
     args.push('-smp', String(machine.system?.cpu_cores || 2));

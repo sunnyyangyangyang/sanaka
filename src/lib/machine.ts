@@ -1,6 +1,6 @@
 import type { DisplayFrontend, MachineDraft, RecentEntry, SakaMachine, SakaTemplate, WorkspaceMachineItem, WorkspaceSelection } from '../domain/schemas';
 
-const KNOWN_ACCELERATORS = ['tcg', 'kvm', 'hax', 'whpx', 'hvf'] as const;
+const KNOWN_ACCELERATORS = ['tcg', 'mttcg', 'kvm', 'hax', 'whpx', 'hvf'] as const;
 type KnownAccelerator = (typeof KNOWN_ACCELERATORS)[number];
 
 function guestFamily(guestArch: string) {
@@ -52,12 +52,17 @@ export function getSupportedAccelerators({
       (KNOWN_ACCELERATORS as readonly string[]).includes(value)
     );
 
-  if (!isGuestArchCompatibleWithHost(hostArch, guestArch)) {
-    return ['tcg'];
-  }
+  const ordered: KnownAccelerator[] = [];
+  const pushUnique = (value: KnownAccelerator) => {
+    if (!ordered.includes(value)) {
+      ordered.push(value);
+    }
+  };
 
-  const ordered: KnownAccelerator[] = normalizedAvailable.length > 0 ? normalizedAvailable : ['tcg'];
-  return ordered.includes('tcg') ? ordered : [...ordered, 'tcg'];
+  normalizedAvailable.forEach(pushUnique);
+  KNOWN_ACCELERATORS.forEach(pushUnique);
+
+  return ordered;
 }
 
 export function makeDisplayHint(machine: SakaMachine) {

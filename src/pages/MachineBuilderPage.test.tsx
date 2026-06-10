@@ -205,7 +205,7 @@ describe('MachineBuilderPage', () => {
     expect(screen.getByRole('button', { name: '机器类型' })).toBeInTheDocument();
   });
 
-  it('limits accelerator choices to the host-compatible options', async () => {
+  it('keeps the full accelerator list visible even when host and guest architectures differ', async () => {
     const user = userEvent.setup();
 
     render(
@@ -221,10 +221,32 @@ describe('MachineBuilderPage', () => {
     await user.click(await screen.findByRole('button', { name: '加速方式' }));
 
     expect(screen.getByRole('option', { name: 'TCG' })).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'KVM' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'HVF' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'WHPX' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'HAX' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'MTTCG（多线程TCG）' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'KVM（Linux）' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'HAX（Windows）' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'WHPX（Windows）' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'HVF（macOS）' })).toBeInTheDocument();
+  });
+
+  it('keeps the full architecture list visible for non-custom templates', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <AppStoreProvider>
+        <MemoryRouter initialEntries={['/machines/new?template=linux']}>
+          <Routes>
+            <Route path="/machines/new" element={<MachineBuilderPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AppStoreProvider>
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'QEMU 架构' }));
+
+    expect(screen.getByRole('option', { name: 'none' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'x86_64' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'aarch64' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'ppc64' })).toBeInTheDocument();
   });
 
   it('shows architecture-aware gpu options for aarch64 linux machines', async () => {

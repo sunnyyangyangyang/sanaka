@@ -17,6 +17,12 @@ describe('chooseAccelerator', () => {
       chooseAccelerator(null, 'darwin', 'aarch64', 'arm64', ['hvf', 'tcg'])
     ).toBe('hvf');
   });
+
+  it('keeps mttcg when it is explicitly requested', () => {
+    expect(
+      chooseAccelerator('mttcg', 'win32', 'x86_64', 'x64', ['whpx', 'tcg', 'mttcg'])
+    ).toBe('mttcg');
+  });
 });
 
 describe('QemuCommandBuilder machine types', () => {
@@ -366,6 +372,54 @@ describe('QemuCommandBuilder machine types', () => {
     expect(result.args).toContain('ich9-ahci,id=ahci0');
     expect(result.args).toContain('ide-hd,drive=drive0,bus=ahci0.1');
     expect(result.args).toContain(`rtl8139,netdev=net0,mac=${deriveStableMacAddress('windows10-sata')}`);
+  });
+
+  it('maps mttcg to tcg multi-thread mode', () => {
+    const builder = new QemuCommandBuilder();
+    const result = builder.build({
+      machine: {
+        id: 'mttcg-test',
+        title: 'MTTCG',
+        system: {
+          arch: 'x86_64',
+          machine_type: 'pc',
+          accelerator: 'mttcg',
+          boot_order: 'disk',
+          memory_mib: 1024,
+          cpu_cores: 2,
+          sound_card: 'ac97',
+          uefi: false
+        },
+        media: { iso: '', floppy: '' },
+        disks: [],
+        network: { enabled: false, mode: 'user', card: 'rtl8139' },
+        display: { frontend: 'sanaka', gpu: 'std', sanaka: { backend: 'vnc', scale_mode: 'fit', clipboard: true } },
+        peripherals: { usb_tablet: true },
+        advanced: { audio_backend: 'auto', qemu_args: '' }
+      },
+      environment: {
+        binaries: {
+          x86_64: { found: true, path: '/usr/bin/qemu-system-x86_64', version: 'QEMU emulator version 9.0.0' }
+        },
+        accelerators: ['tcg', 'mttcg']
+      },
+      runtimePaths: {
+        qmp: { transport: 'tcp', host: '127.0.0.1', port: 47001 }
+      },
+      displayConfig: {
+        port: 5901,
+        websocketPort: 5701,
+        displayNumber: 1
+      },
+      host: {
+        platform: 'linux',
+        arch: 'x64'
+      }
+    });
+
+    const accelIndex = result.args.indexOf('-accel');
+    expect(accelIndex).toBeGreaterThan(-1);
+    expect(result.args[accelIndex + 1]).toBe('tcg,thread=multi');
   });
 
   it('maps q35 cdroms through AHCI instead of assuming a legacy IDE bus', () => {

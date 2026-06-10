@@ -543,11 +543,21 @@ export function MachineBuilderPage() {
     hostArch,
     guestArch: machine?.system.arch,
     availableAccelerators: runtimeEnvironment?.accelerators
-  }).map((value) => ({ value, label: value.toUpperCase() })) as Array<{
+  }).map((value) => {
+    const label =
+      value === 'mttcg' ? 'MTTCG（多线程TCG）'
+        : value === 'hvf' ? 'HVF（macOS）'
+          : value === 'kvm' ? 'KVM（Linux）'
+            : value === 'whpx' ? 'WHPX（Windows）'
+              : value === 'hax' ? 'HAX（Windows）'
+                : value.toUpperCase();
+
+    return { value, label };
+  }) as Array<{
     value: SakaMachine['system']['accelerator'];
     label: string;
   }>;
-  const visibleArchOptions = isCustomTemplate ? customArchOptions : archOptions;
+  const visibleArchOptions = customArchOptions;
   const visibleGpuOptions = machine ? gpuOptionsForMachine(machine) : x86GpuOptions;
   const visibleNetworkCardOptions = machine ? networkCardOptionsForMachine(machine) : networkCardOptions;
   const visibleDiskInterfaceOptions = machine ? diskInterfaceOptionsForMachine(machine) : diskInterfaceOptions;

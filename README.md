@@ -6,7 +6,7 @@
 
 精致 QEMU 虚拟机管理软件前端
 
-![License: MIT](https://img.shields.io/badge/License-GPL2-yellow.svg)
+![License: GPL2](https://img.shields.io/badge/License-GPL2-yellow.svg)
 [![Platform](https://img.shields.io/badge/OS-macOS%2FWindows%2FLinux-blue)](https://github.com/steve372a/pier)
 [![Version](https://img.shields.io/badge/version-0.0.2(beta)-brightgreen)]()
 [![Stars](https://img.shields.io/github/stars/steve372a/sanaka?style=social)]()
@@ -38,6 +38,8 @@ sudo apt install qemu-system qemu-utils ovmf qemu-block-extra
 ```
 
 ## 共享剪贴板
+
+* 需要安装增强包，参见教程：[安装增强功能包](./docs/guides/安装增强包.md)
 
 Sanaka 支持剪贴板共享功能，不需要 SPICE、GTK 等特定限制，只需安装 Sanaka 增强功能包，就能支持双方剪贴板共享。
 支持 Windows XP 及以上、主流 Linux 发行版的剪贴板共享，开箱即用。
