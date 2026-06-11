@@ -120,6 +120,6 @@ Vibe Coding 开发，使用 Codex 软件作为 Agent
 
 <div align="center>
 
-![](./assets/pictures/md1.svg)
+![](./assets/pictures/md1.png)
 
 </div>
