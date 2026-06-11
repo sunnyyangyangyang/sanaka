@@ -115,3 +115,11 @@ Vibe Coding 开发，使用 Codex 软件作为 Agent
 前端：Kimi/Gemini
 
 后端：GPT (ChatGPT)
+
+## 许可证
+
+<div align="center>
+
+![](./assets/pictures/md1.svg)
+
+</div>
