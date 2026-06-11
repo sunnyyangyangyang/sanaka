@@ -7,8 +7,20 @@ const HEARTBEAT_INTERVAL_MS = 5000;
 const MAX_CLIPBOARD_BYTES = 1024 * 1024;
 const PROTOCOL_VERSION = 1;
 
+function normalizeLineEndingsForTransport(text) {
+  return String(text || '').replace(/\r\n?/g, '\n');
+}
+
+function normalizeLineEndingsForHost(text, platform = process.platform) {
+  const normalized = normalizeLineEndingsForTransport(text);
+  if (platform === 'win32') {
+    return normalized.replace(/\n/g, '\r\n');
+  }
+  return normalized;
+}
+
 function hashText(text) {
-  const value = String(text || '');
+  const value = normalizeLineEndingsForTransport(text);
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
     hash ^= value.charCodeAt(index);
@@ -224,7 +236,7 @@ class ClipboardBridgeService {
     }
 
     if (payload.type === 'clipboard_push') {
-      const text = typeof payload.text === 'string' ? payload.text : '';
+      const text = normalizeLineEndingsForTransport(typeof payload.text === 'string' ? payload.text : '');
       this.onLog(`clipboard push from guest machineId=${this.machineId} bytes=${Buffer.byteLength(text, 'utf8')}`);
       if (Buffer.byteLength(text, 'utf8') > MAX_CLIPBOARD_BYTES) {
         this.lastError = 'Clipboard payload exceeds size limit.';
@@ -237,7 +249,7 @@ class ClipboardBridgeService {
         return;
       }
       try {
-        this.writeClipboardText(text);
+        this.writeClipboardText(normalizeLineEndingsForHost(text));
         this.lastRemoteAppliedHash = hash;
         this.lastLocalHash = hash;
         this.lastError = null;
@@ -259,7 +271,7 @@ class ClipboardBridgeService {
   #pollClipboard() {
     let text = '';
     try {
-      text = String(this.readClipboardText() || '');
+      text = normalizeLineEndingsForTransport(this.readClipboardText() || '');
     } catch (error) {
       this.lastError = error instanceof Error ? error.message : 'Failed to read host clipboard.';
       this.#emitState();
@@ -310,6 +322,8 @@ class ClipboardBridgeService {
 module.exports = {
   ClipboardBridgeService,
   hashText,
+  normalizeLineEndingsForHost,
+  normalizeLineEndingsForTransport,
   MAX_CLIPBOARD_BYTES,
   PROTOCOL_VERSION
 };

@@ -1,69 +1,61 @@
-# Kimi -> GPT：UEFI 固件配置前端实现完成
+# Kimi -> GPT：网页模式入口前端实现完成
 
 ## 我实际改了什么
 
 ### 1. 修改的文件
 
-- **src/pages/MachineBuilderPage.tsx**
-  - 修改 `supportsUefi` 逻辑：现在支持 `aarch64 + virt` 组合开启 UEFI
-  - 新增固件图标 `FirmwareIcon` 和 `FileIcon`
-  - 在高级选项的 UEFI 开关下方，新增完整的固件配置 UI
+- **src/components/AppHeader.tsx**
+  - 新增 `MoreIcon` 组件（三点图标）
+  - 新增状态 `moreMenuOpen` 和 ref `moreMenuRef`
+  - 新增 `handleOpenWebMode` action handler（后端对接位）
+  - 在导航栏底部添加 `...` 更多按钮和菜单
+
+- **src/styles/app.css**
+  - 新增 `.sidebar-footer-tools` 容器样式
+  - 新增 `.sidebar-footer-divider` 分隔线样式
+  - 新增 `.sidebar-more-menu` 及相关样式（按钮、下拉菜单、菜单项）
 
 - **src/i18n/resources.ts**
-  - 添加中英文翻译：固件来源、CODE/VARS 文件选择、状态文案等
+  - 添加中英文翻译：`more`（更多）、`openWebMode`（打开网页模式）
 
-### 2. aarch64 + virt 的 UEFI 限制已放开
+### 2. `...` 更多按钮放在了哪里
 
-```typescript
-const supportsUefi = (machine.system.arch === 'x86_64' && machine.template.key !== 'win98') ||
-  (machine.system.arch === 'aarch64' && machine.system.machine_type === 'virt');
+位于左侧导航栏底部（`workspace-sidebar__section--footer`）：
+
+```
+[主题切换: 太阳 月亮] | [⋯]
+[Home] [Settings] [About]
 ```
 
-### 3. CODE/VARS 的 UI 入口位置
+- 主题切换和 `...` 在同一排
+- 中间有 `|` 分隔线（`.sidebar-footer-divider`）
+- 视觉上克制，使用 32x32 图标按钮
 
-位于高级选项卡片内，UEFI 开关下方：
-
-1. **固件来源切换按钮组**
-   - "自动查找" / "自定义" 两个按钮
-   - 选中状态用 `button--primary` / `button--secondary` 区分
-
-2. **状态说明文案**
-   - 自动模式："Sanaka 将尝试自动查找可用的 UEFI 固件。"
-   - 仅 CODE："将使用你指定的固件文件启动。未指定 VARS 文件时，某些固件不会保存启动变量。"
-   - CODE + VARS："将使用你指定的 UEFI 固件和变量文件启动。"
-
-3. **CODE 固件文件选择**
-   - 显示文件名（从路径提取）
-   - 次级显示完整路径（小字、自动换行）
-   - "选择文件" / "清除" 按钮
-
-4. **VARS 文件选择（可选）**
-   - 同上布局
-   - 文案标注"（可选）"
-
-### 4. 需要后端配合的点
-
-前端代码中调用了以下 IPC API，需要后端实现：
+### 3. `打开网页模式` 的 action 入口在哪里
 
 ```typescript
-window.electronAPI.dialogs.pickFirmwareCode()
-window.electronAPI.dialogs.pickFirmwareVars()
+const handleOpenWebMode = () => {
+  setMoreMenuOpen(false);
+  // TODO: 后端对接位 - 启动网页服务并打开浏览器
+  // window.electronAPI.webMode.open();
+  console.log('[WebMode] Action triggered - awaiting backend implementation');
+};
 ```
 
-这两个对话框应该：
-- 允许选择任意文件（不限扩展名，因为固件可能是 `.fd`, `.bin`, `.rom` 等）
-- 返回 `{ path: string }` 或 `null`
+位置：`src/components/AppHeader.tsx` 第 268-273 行
 
-### 5. 当前还有哪些没做
+### 4. 目前只是前端壳，哪些地方还等我接后端
 
-- 固件文件路径的验证（前端只做空值判断，不做文件存在性检查）
-- 固件文件的拖拽导入（可选增强）
-- 最近使用的固件文件历史（可选增强）
+- **IPC API**：`window.electronAPI.webMode.open()`
+  - 启动网页服务
+  - 自动打开系统默认浏览器
+  - 返回成功/失败状态
 
-### 6. 实现细节说明
+- **菜单点击外部关闭**：目前菜单可以通过再次点击 `...` 按钮关闭，建议后端接入后考虑添加点击外部关闭的逻辑
 
-- 固件配置区域只在 `machine.system.uefi && supportsUefi` 时显示
-- 使用 `path-picker-card` 样式复用现有的 ISO 选择组件风格
-- 路径显示采用"文件名 + 完整路径"双层结构，避免布局爆炸
-- 清除按钮只在有值时显示
-- 所有文案均已 i18n 化
+### 5. 实现细节
+
+- 菜单使用绝对定位，向上弹出（`bottom: calc(100% + 8px)`）
+- 菜单项使用现有设计系统样式（圆角、hover 效果）
+- 所有文案已 i18n 化
+- 遵循克制原则，没有做成首页大按钮或设置页选项

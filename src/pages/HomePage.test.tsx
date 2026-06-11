@@ -106,6 +106,9 @@ function mockElectronApi(recents: Array<Record<string, unknown>> = []) {
     },
     app: {
       getMetadata: vi.fn(async () => ({ name: 'Sanaka', version: '1.0.0', platform: 'darwin', arch: 'x64', userDataPath: '/tmp', documentsPath: '/tmp/Documents', defaultMachineDirectory: '/tmp/Documents/Sanaka' })),
+      openWebMode: vi.fn(async () => ({ active: true, url: 'http://127.0.0.1:39281/', host: '127.0.0.1', port: 39281, startedAt: new Date().toISOString(), localOnly: true })),
+      getWebModeState: vi.fn(async () => ({ active: false, url: null, host: '127.0.0.1', port: null, startedAt: null, localOnly: true })),
+      stopWebMode: vi.fn(async () => ({ ok: true as const })),
       consumePendingSakaPaths: vi.fn(async () => []),
       openExternal: vi.fn(async () => ({ ok: true as const })),
       onOpenSaka: vi.fn(() => () => undefined),
@@ -173,5 +176,72 @@ describe('HomePage', () => {
     await user.click(screen.getByRole('button', { name: '设置' }));
 
     expect(await screen.findByText('管理应用偏好、默认配置和模板。')).toBeInTheDocument();
+  });
+
+  it('opens web mode from the top tools menu', async () => {
+    const user = userEvent.setup();
+    mockElectronApi();
+    renderHome();
+
+    await user.click(await screen.findByRole('button', { name: '更多' }));
+    await user.click(await screen.findByRole('menuitem', { name: '打开网页模式' }));
+
+    expect(window.electronAPI.app.openWebMode).toHaveBeenCalledTimes(1);
+  });
+
+  it('copies and stops web mode from the top tools menu', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText
+      }
+    });
+
+    mockElectronApi();
+    (window.electronAPI.app.getWebModeState as ReturnType<typeof vi.fn>).mockResolvedValue({
+      active: true,
+      url: 'http://127.0.0.1:39281/',
+      host: '127.0.0.1',
+      port: 39281,
+      startedAt: new Date().toISOString(),
+      localOnly: true
+    });
+
+    renderHome();
+
+    await screen.findByRole('button', { name: '更多' });
+
+    await user.click(screen.getByRole('button', { name: '更多' }));
+    await user.click(await screen.findByRole('menuitem', { name: '复制网页地址' }));
+    expect(writeText).toHaveBeenCalledWith('http://127.0.0.1:39281/');
+
+    await user.click(screen.getByRole('button', { name: '更多' }));
+    await user.click(await screen.findByRole('menuitem', { name: '停止网页服务' }));
+    expect(window.electronAPI.app.stopWebMode).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the browser again from the web mode info dialog', async () => {
+    const user = userEvent.setup();
+
+    mockElectronApi();
+    (window.electronAPI.app.getWebModeState as ReturnType<typeof vi.fn>).mockResolvedValue({
+      active: true,
+      url: 'http://127.0.0.1:39281/',
+      host: '127.0.0.1',
+      port: 39281,
+      startedAt: new Date().toISOString(),
+      localOnly: true
+    });
+
+    renderHome();
+
+    await screen.findByRole('button', { name: '更多' });
+    await user.click(screen.getByRole('button', { name: '更多' }));
+    await user.click(await screen.findByRole('menuitem', { name: '查看网页服务信息' }));
+    await user.click(await screen.findByRole('button', { name: '在浏览器打开' }));
+
+    expect(window.electronAPI.app.openExternal).toHaveBeenCalledWith('http://127.0.0.1:39281/');
   });
 });

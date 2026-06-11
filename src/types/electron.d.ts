@@ -99,6 +99,15 @@ export interface AppMetadata {
   defaultMachineDirectory: string;
 }
 
+export interface WebModeState {
+  active: boolean;
+  url: string | null;
+  host: string;
+  port: number | null;
+  startedAt: string | null;
+  localOnly: boolean;
+}
+
 export interface SharedFolderConfig {
   enabled: boolean;
   hostPath: string;
@@ -407,6 +416,9 @@ export interface ElectronApi {
   };
   app: {
     getMetadata: () => Promise<AppMetadata>;
+    openWebMode: () => Promise<WebModeState>;
+    getWebModeState: () => Promise<WebModeState>;
+    stopWebMode: () => Promise<{ ok: true }>;
     consumePendingSakaPaths: () => Promise<string[]>;
     openExternal: (url: string) => Promise<{ ok: true }>;
     onOpenSaka: (handler: (payload: { path: string }) => void) => () => void;

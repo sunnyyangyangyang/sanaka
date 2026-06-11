@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { machineRoute } from '../lib/routes';
 import { makeWorkspaceMachineItems, resolveWorkspaceSelection } from '../lib/machine';
@@ -7,6 +7,7 @@ import { useAppStore } from '../store/AppStore';
 import { usePresence } from '../hooks/usePresence';
 import { useT } from '../hooks/useT';
 import { ExportMachineDialog } from './ExportMachineDialog';
+import type { WebModeState } from '../types/electron';
 import logoUrl from '../../assets/icons/fish.png';
 
 const SunIcon = () => (
@@ -26,6 +27,14 @@ const SunIcon = () => (
 const MoonIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
+
+const MoreIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+    <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" fill="currentColor" />
+    <path d="M19 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" fill="currentColor" />
+    <path d="M5 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" fill="currentColor" />
   </svg>
 );
 
@@ -96,6 +105,7 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
     renameMachine,
     duplicateMachine,
     setDeleteTarget,
+    setStartError,
     highlightedMachinePath
   } = useAppStore();
   const t = useT();
@@ -114,7 +124,55 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
     path?: string;
     disks?: Array<{ id: string; name: string; path: string }>;
   } | null>(null);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [openingWebMode, setOpeningWebMode] = useState(false);
+  const [stoppingWebMode, setStoppingWebMode] = useState(false);
+  const [copyingWebModeUrl, setCopyingWebModeUrl] = useState(false);
+  const [webModeCopied, setWebModeCopied] = useState(false);
+  const [webModeState, setWebModeState] = useState<WebModeState | null>(null);
+  const [showWebModeInfo, setShowWebModeInfo] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const renameModal = usePresence(Boolean(renameTarget));
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void window.electronAPI.app.getWebModeState().then((state) => {
+      if (!cancelled) {
+        setWebModeState(state);
+      }
+    }).catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!moreMenuOpen) {
+      return () => undefined;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!moreMenuRef.current?.contains(event.target as Node)) {
+        setMoreMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMoreMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [moreMenuOpen]);
 
   const navClass = (active: boolean, flash: boolean) => {
     const classNames = ['workspace-sidebar__item'];
@@ -255,6 +313,112 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
     }
   };
 
+  const handleOpenWebMode = async () => {
+    setMoreMenuOpen(false);
+    if (openingWebMode) {
+      return;
+    }
+
+    setOpeningWebMode(true);
+    try {
+      const state = await window.electronAPI.app.openWebMode();
+      setWebModeState(state);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message.trim() : String(error || '').trim();
+      setStartError({
+        title: t('app.webModeErrorTitle'),
+        description: t('app.webModeErrorDescription'),
+        detail: detail || undefined
+      });
+    } finally {
+      setOpeningWebMode(false);
+    }
+  };
+
+  const handleOpenWebModeInBrowser = async () => {
+    if (!webModeState?.url) {
+      return;
+    }
+
+    try {
+      await window.electronAPI.app.openExternal(webModeState.url);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message.trim() : String(error || '').trim();
+      setStartError({
+        title: t('app.webModeOpenBrowserErrorTitle'),
+        description: t('app.webModeOpenBrowserErrorDescription'),
+        detail: detail || undefined
+      });
+    }
+  };
+
+  const handleCopyWebModeUrl = async () => {
+    if (!webModeState?.url || copyingWebModeUrl) {
+      return;
+    }
+
+    setCopyingWebModeUrl(true);
+    try {
+      await navigator.clipboard.writeText(webModeState.url);
+      setWebModeCopied(true);
+      window.setTimeout(() => {
+        setWebModeCopied(false);
+      }, 2000);
+      setMoreMenuOpen(false);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message.trim() : String(error || '').trim();
+      setStartError({
+        title: t('app.webModeCopyErrorTitle'),
+        description: t('app.webModeCopyErrorDescription'),
+        detail: detail || undefined
+      });
+    } finally {
+      setCopyingWebModeUrl(false);
+    }
+  };
+
+  const handleOpenWebModeInfo = async () => {
+    try {
+      const state = await window.electronAPI.app.getWebModeState();
+      setWebModeState(state);
+      setShowWebModeInfo(true);
+      setMoreMenuOpen(false);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message.trim() : String(error || '').trim();
+      setStartError({
+        title: t('app.webModeStatusErrorTitle'),
+        description: t('app.webModeStatusErrorDescription'),
+        detail: detail || undefined
+      });
+    }
+  };
+
+  const handleStopWebMode = async () => {
+    if (stoppingWebMode) {
+      return;
+    }
+
+    setStoppingWebMode(true);
+    try {
+      await window.electronAPI.app.stopWebMode();
+      const state = await window.electronAPI.app.getWebModeState();
+      setWebModeState(state);
+      setShowWebModeInfo(false);
+      setMoreMenuOpen(false);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message.trim() : String(error || '').trim();
+      setStartError({
+        title: t('app.webModeStopErrorTitle'),
+        description: t('app.webModeStopErrorDescription'),
+        detail: detail || undefined
+      });
+    } finally {
+      setStoppingWebMode(false);
+    }
+  };
+
+  const webModeActive = Boolean(webModeState?.active && webModeState?.url);
+
   return (
     <>
       <aside className="app-sidebar">
@@ -329,25 +493,78 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
         <div className="workspace-sidebar__spacer" />
 
         <div className="workspace-sidebar__section workspace-sidebar__section--footer">
-          <div className="sidebar-theme-toggle">
-            <button
-              className={settings.theme === 'light' ? 'sidebar-theme-toggle__btn sidebar-theme-toggle__btn--active' : 'sidebar-theme-toggle__btn'}
-              type="button"
-              aria-label={t('settings.light')}
-              title={t('settings.light')}
-              onClick={() => void setTheme('light')}
-            >
-              <SunIcon />
-            </button>
-            <button
-              className={settings.theme === 'dark' ? 'sidebar-theme-toggle__btn sidebar-theme-toggle__btn--active' : 'sidebar-theme-toggle__btn'}
-              type="button"
-              aria-label={t('settings.dark')}
-              title={t('settings.dark')}
-              onClick={() => void setTheme('dark')}
-            >
-              <MoonIcon />
-            </button>
+          <div className="sidebar-footer-tools" ref={moreMenuRef}>
+            <div className="sidebar-theme-toggle">
+              <button
+                className={settings.theme === 'light' ? 'sidebar-theme-toggle__btn sidebar-theme-toggle__btn--active' : 'sidebar-theme-toggle__btn'}
+                type="button"
+                aria-label={t('settings.light')}
+                title={t('settings.light')}
+                onClick={() => void setTheme('light')}
+              >
+                <SunIcon />
+              </button>
+              <button
+                className={settings.theme === 'dark' ? 'sidebar-theme-toggle__btn sidebar-theme-toggle__btn--active' : 'sidebar-theme-toggle__btn'}
+                type="button"
+                aria-label={t('settings.dark')}
+                title={t('settings.dark')}
+                onClick={() => void setTheme('dark')}
+              >
+                <MoonIcon />
+              </button>
+              <div className="sidebar-theme-divider" aria-hidden="true" />
+              <button
+                className="sidebar-theme-toggle__btn"
+                type="button"
+                aria-label={t('app.more')}
+                title={t('app.more')}
+                aria-haspopup="true"
+                aria-expanded={moreMenuOpen}
+                onClick={() => setMoreMenuOpen((v) => !v)}
+              >
+                <MoreIcon />
+              </button>
+            </div>
+            {moreMenuOpen && (
+              <div className="sidebar-more-menu__dropdown" role="menu">
+                <button
+                  className="sidebar-more-menu__item"
+                  type="button"
+                  role="menuitem"
+                  disabled={openingWebMode}
+                  onClick={() => void handleOpenWebMode()}
+                >
+                  {openingWebMode ? t('app.openingWebMode') : t('app.openWebMode')}
+                </button>
+                <button
+                  className="sidebar-more-menu__item"
+                  type="button"
+                  role="menuitem"
+                  disabled={!webModeActive || copyingWebModeUrl}
+                  onClick={() => void handleCopyWebModeUrl()}
+                >
+                  {webModeCopied ? t('app.webModeCopied') : t('app.copyWebModeUrl')}
+                </button>
+                <button
+                  className="sidebar-more-menu__item"
+                  type="button"
+                  role="menuitem"
+                  onClick={() => void handleOpenWebModeInfo()}
+                >
+                  {t('app.viewWebModeInfo')}
+                </button>
+                <button
+                  className="sidebar-more-menu__item sidebar-more-menu__item--danger"
+                  type="button"
+                  role="menuitem"
+                  disabled={!webModeActive || stoppingWebMode}
+                  onClick={() => void handleStopWebMode()}
+                >
+                  {stoppingWebMode ? t('app.stoppingWebMode') : t('app.stopWebMode')}
+                </button>
+              </div>
+            )}
           </div>
           <nav className="workspace-sidebar__utilities" aria-label="Application utilities">
             <button className={utilityClass(location.pathname === '/')} type="button" aria-label={t('home.sidebarHome')} title={t('home.sidebarHome')} onClick={() => navigate('/')}>
@@ -371,6 +588,59 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
           </nav>
         </div>
       </aside>
+
+      {showWebModeInfo && (
+        <div className="modal-backdrop modal-backdrop--visible" role="presentation" onClick={() => setShowWebModeInfo(false)}>
+          <div className="modal-card modal-card--visible web-mode-info-modal" role="dialog" aria-modal="true" aria-labelledby="web-mode-info-title" onClick={(event) => event.stopPropagation()}>
+            <div className="brand-orb brand-orb--modal" />
+            <h2 id="web-mode-info-title" style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>
+              {t('app.webModeInfoTitle')}
+            </h2>
+            <p className="muted" style={{ margin: '0 0 18px 0', fontSize: '0.9rem', lineHeight: '1.6' }}>
+              {webModeActive ? t('app.webModeInfoRunning') : t('app.webModeInfoStopped')}
+            </p>
+            <div className="web-mode-info-grid">
+              <div className="web-mode-info-row">
+                <span className="web-mode-info-row__label">{t('app.webModeStatusLabel')}</span>
+                <span className="web-mode-info-row__value">{webModeActive ? t('app.webModeStatusRunning') : t('app.webModeStatusStopped')}</span>
+              </div>
+              <div className="web-mode-info-row">
+                <span className="web-mode-info-row__label">{t('app.webModeUrlLabel')}</span>
+                <code className="web-mode-info-row__code">{webModeState?.url || t('app.webModeUnavailable')}</code>
+              </div>
+              <div className="web-mode-info-row">
+                <span className="web-mode-info-row__label">{t('app.webModeHostLabel')}</span>
+                <code className="web-mode-info-row__code">{webModeState?.host || '127.0.0.1'}</code>
+              </div>
+              <div className="web-mode-info-row">
+                <span className="web-mode-info-row__label">{t('app.webModePortLabel')}</span>
+                <code className="web-mode-info-row__code">{webModeState?.port != null ? String(webModeState.port) : t('app.webModeUnavailable')}</code>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '22px' }}>
+              <button
+                className="button button--secondary"
+                type="button"
+                disabled={!webModeActive || copyingWebModeUrl}
+                onClick={() => void handleCopyWebModeUrl()}
+              >
+                {webModeCopied ? t('app.webModeCopied') : t('app.copyWebModeUrl')}
+              </button>
+              <button
+                className="button button--secondary"
+                type="button"
+                disabled={!webModeActive}
+                onClick={() => void handleOpenWebModeInBrowser()}
+              >
+                {t('app.openWebModeInBrowser')}
+              </button>
+              <button className="button button--secondary" type="button" onClick={() => setShowWebModeInfo(false)}>
+                {t('app.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {contextMenu && (
         <div

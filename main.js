@@ -6,6 +6,7 @@ const { DiskImageService } = require('./runtime/DiskImageService');
 const { ExportService } = require('./runtime/ExportService');
 const { RuntimeManager } = require('./runtime/RuntimeManager');
 const { UpdateService } = require('./runtime/UpdateService');
+const { WebModeService } = require('./runtime/WebModeService');
 
 const SETTINGS_FILE = 'settings.json';
 const RECENTS_FILE = 'recents.json';
@@ -31,6 +32,7 @@ let runtimeManager = null;
 let diskImageService = null;
 let exportService = null;
 let updateService = null;
+let webModeService = null;
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
 if (!gotSingleInstanceLock) {
@@ -113,6 +115,24 @@ function getExportService() {
     });
   }
   return exportService;
+}
+
+function getWebModeService() {
+  if (!webModeService) {
+    webModeService = new WebModeService({
+      appName: app.getName(),
+      appVersion: app.getVersion(),
+      getRuntimeSummary: async () => {
+        const environment = await getRuntimeManager().getRuntimeEnvironment().catch(() => null);
+        const runningMachines = await getRuntimeManager().listRunningMachines().catch(() => []);
+        return {
+          qemuAvailable: Boolean(environment?.available),
+          runningMachines: Array.isArray(runningMachines) ? runningMachines.length : 0
+        };
+      }
+    });
+  }
+  return webModeService;
 }
 
 function normalizeSakaArg(argv) {
@@ -763,6 +783,21 @@ const ipcHandlers = {
       defaultMachineDirectory
     };
   },
+  async openWebMode() {
+    const state = await getWebModeService().start();
+    if (!state.url) {
+      throw new Error('Web mode did not provide a usable local URL.');
+    }
+    await shell.openExternal(state.url);
+    return state;
+  },
+  async getWebModeState() {
+    return getWebModeService().getState();
+  },
+  async stopWebMode() {
+    await getWebModeService().stop();
+    return { ok: true };
+  },
   consumePendingSakaPaths() {
     const pending = [...pendingSakaPaths];
     pendingSakaPaths = [];
@@ -919,6 +954,9 @@ app.whenReady().then(() => {
   ipcMain.handle('recents:push', ipcHandlers.pushRecent);
   ipcMain.handle('recents:remove', ipcHandlers.removeRecent);
   ipcMain.handle('app:get-metadata', ipcHandlers.getAppMetadata);
+  ipcMain.handle('app:open-web-mode', ipcHandlers.openWebMode);
+  ipcMain.handle('app:get-web-mode-state', ipcHandlers.getWebModeState);
+  ipcMain.handle('app:stop-web-mode', ipcHandlers.stopWebMode);
   ipcMain.handle('app:consume-pending-saka-paths', ipcHandlers.consumePendingSakaPaths);
   ipcMain.handle('app:open-external', ipcHandlers.openExternal);
   ipcMain.handle('updater:get-current-info', ipcHandlers.getUpdaterCurrentInfo);
@@ -960,6 +998,9 @@ app.on('activate', () => {
 app.on('before-quit', async () => {
   if (updateService) {
     updateService.dispose();
+  }
+  if (webModeService) {
+    await webModeService.stop().catch(() => null);
   }
   if (runtimeManager) {
     await runtimeManager.dispose().catch(() => null);

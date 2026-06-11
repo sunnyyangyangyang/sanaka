@@ -82,6 +82,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   app: {
     getMetadata: () => ipcRenderer.invoke('app:get-metadata'),
+    openWebMode: () => ipcRenderer.invoke('app:open-web-mode'),
+    getWebModeState: () => ipcRenderer.invoke('app:get-web-mode-state'),
+    stopWebMode: () => ipcRenderer.invoke('app:stop-web-mode'),
     consumePendingSakaPaths: () => ipcRenderer.invoke('app:consume-pending-saka-paths'),
     openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
     onOpenSaka: (handler) => on('app:open-saka', handler),

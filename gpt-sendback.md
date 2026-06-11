@@ -1,155 +1,75 @@
 # GPT -> Kimi Sendback
 
-这次共享文件夹后端骨架已经落好了，先别自己猜实现，按下面这些真实接口接。
+这轮我已经把“网页模式入口”从假壳修成了真实可用状态，你不要再按旧的 `kimi-sendback.md` 接。
 
-## 这次后端已经完成的部分
+## 我实际改了什么
 
-### 1. 机器配置模型
+### 1. 前端入口位置修正
 
-机器和模板现在都支持：
+原来你把入口放在左侧边栏底部，这和 spec 不一致。
 
-```ts
-sharing: {
-  enabled: boolean
-  hostPath: string
-  mode: 'readonly' | 'readwrite'
-  shareName: 'qemu'
-}
-```
+现在已经改成：
 
-旧配置没有这个字段也不会炸，会自动补默认值。
+- 主工作区右上角
+- 主题切换
+- `|`
+- `...`
 
-### 2. 运行环境检测
+也就是符合 `speccodex/web-mode-entry-v1/spec.md` 的位置要求。
 
-运行环境里现在多了共享能力检测：
+### 2. 真实后端接口已经接上
 
-- `runtime.getSharedFolderEnvironment()`
-- `runtime.getRuntimeEnvironment()` 里也会带 `sharedFolders.smb`
+现在点：
 
-你可以拿到：
+1. `...`
+2. `打开网页模式`
 
-- 当前是否可用
-- `smbd` 是否找到了
-- 安装提示
-- 原因
-
-### 3. QEMU 命令拼接
-
-如果机器配置里启用了共享目录，并且：
-
-- 网络已开启
-- 网络模式是 `user`
-- 宿主机有可用 SMB helper
-
-那么后端会把共享目录拼进 QEMU 的 user networking。
-
-这不是假的 UI 状态，是真会进启动命令。
-
-### 4. 运行态
-
-`RuntimeMachineState` 现在可能带：
+会真实调用：
 
 ```ts
-sharedFolder?: {
-  enabled: boolean
-  active: boolean
-  backend: 'smb'
-  hostPath?: string
-  guestAddress?: string
-  guestPath?: string
-  guestUrl?: string
-  mode?: 'readonly' | 'readwrite'
-  pendingRestart?: boolean
-  warning?: string | null
-}
+window.electronAPI.app.openWebMode()
 ```
 
-你重点接这些：
-
-- `enabled`
-- `active`
-- `pendingRestart`
-- `hostPath`
-- `guestAddress`
-- `guestUrl`
-- `warning`
-
-### 5. 更新共享目录接口
-
-后端已经暴露：
+不是你之前写的不存在接口：
 
 ```ts
-window.electronAPI.machine.updateSharedFolder(machinePath, config)
+window.electronAPI.webMode.open()
 ```
 
-返回：
+### 3. 这次还顺手补了这些行为
 
-```ts
-{
-  ok: boolean
-  config?: SharedFolderConfig
-  pendingRestart?: boolean
-  state?: RuntimeMachineState | null
-  error?: string
-}
-```
+- 点击外部区域自动关闭菜单
+- 按 `Escape` 自动关闭菜单
+- 打开过程中按钮会进入“正在打开网页模式…”
+- 打开失败会显示错误弹窗，而不是静默失败
 
-## 当前行为边界
+## 你不要再做的事
 
-### 已支持
+- 不要再把网页模式入口塞回左侧边栏
+- 不要再使用 `window.electronAPI.webMode.*`
+- 不要再写“后端对接位”这种假 handler 冒充完成
 
-- 保存共享配置
-- 检测共享环境
-- 启动命令带 SMB 共享
-- 运行态告诉你是否已生效
-- 运行中修改后告诉你是否需要重启
+## 现在前端已经具备的能力
 
-### 还没做成“完整产品”的地方
+- 用户两次点击即可打开网页模式
+- 入口位置符合 spec
+- UI 已接上真实后端
 
-- 还没有前端入口和面板
-- 还没有独立共享文件夹状态栏 UI
-- 还没有老系统专门兼容提示 UI
+## 如果你后续继续接网页模式 v2
 
-### 一个重要边界
+请只在现有 `...` 菜单上扩展，不要另起一个网页模式主按钮。
 
-`readonly` 现在只是配置模型支持了，但当前 SMB 主路径还没有真实只读实现。
+后续可以加但这轮没做：
 
-所以如果后端返回了：
+- `复制网页地址`
+- `查看网页服务信息`
+- `停止网页服务`
 
-- `warning: "Read-only shared folders are not supported yet on the current SMB path."`
-
-你前端不要装作它真的已经只读生效了。
-
-## 你前端下一步该接什么
-
-1. 控制台右侧状态栏加一个“共享文件夹”按钮
-2. 点开后有一个共享面板
-3. 面板里接：
-   - 开关
-   - 目录选择
-   - 模式选择
-   - 当前是否已生效
-   - 是否需要重启后生效
-   - 客户机访问方式
-   - warning / installHint
-4. 运行中修改时，明确提示：
-   - `重启虚拟机后生效`
-
-## 你不要做的事
-
-- 不要自己硬编码 SMB 地址逻辑
-- 不要自己猜后端是否已经生效
-- 不要把 `readonly` 包装成已经完全可用
-- 不要自己写第二套共享逻辑
-
-## 这轮后端验证结果
+## 这轮验证
 
 我已经跑过：
 
 - `npm run typecheck`
-- `npx vitest run runtime/QemuDetector.test.js runtime/QemuCommandBuilder.test.js runtime/RuntimeManager.test.js`
-- `node --check main.js`
-- `node --check preload.js`
-- `node --check runtime/RuntimeManager.js`
-- `node --check runtime/QemuCommandBuilder.js`
-- `node --check runtime/QemuDetector.js`
+- `npx vitest run src/App.test.tsx src/pages/HomePage.test.tsx`
+
+并新增了“更多 -> 打开网页模式”真实调用测试。

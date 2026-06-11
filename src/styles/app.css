@@ -223,6 +223,7 @@ body.platform-darwin .app-dragbar {
   display: grid;
   grid-template-columns: clamp(260px, 24vw, 340px) minmax(0, 1fr);
   gap: 0;
+  position: relative;
   height: 100vh;
   min-height: 0;
 }
@@ -5557,8 +5558,8 @@ html[data-theme="dark"] .context-menu {
   padding: 6px;
   margin-bottom: 10px;
   background: var(--panel-muted);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(54, 42, 73, 0.1);
 }
 
 .sidebar-theme-toggle__btn {
@@ -5568,7 +5569,7 @@ html[data-theme="dark"] .context-menu {
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
@@ -5584,4 +5585,139 @@ html[data-theme="dark"] .context-menu {
   background: var(--panel);
   color: var(--text);
   box-shadow: var(--shadow-soft);
+}
+
+.sidebar-theme-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+  margin: 0 4px;
+}
+
+/* Sidebar footer tools container */
+.sidebar-footer-tools {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.sidebar-footer-tools .sidebar-theme-toggle {
+  margin-bottom: 0;
+}
+
+.sidebar-footer-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--line);
+  flex-shrink: 0;
+}
+
+/* Sidebar more menu dropdown - 复用右键菜单样式 */
+.sidebar-more-menu__dropdown {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  min-width: 170px;
+  background: var(--surface-floating);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(210, 197, 223, 0.5);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(54, 42, 73, 0.16);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: context-menu-in 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 1000;
+}
+
+html[data-theme="dark"] .sidebar-more-menu__dropdown {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.sidebar-more-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text);
+  text-align: left;
+  transition: background 100ms ease, color 100ms ease;
+  cursor: pointer;
+}
+
+.sidebar-more-menu__item:hover {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+.sidebar-more-menu__item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sidebar-more-menu__item--danger {
+  color: var(--danger);
+}
+
+.sidebar-more-menu__item--danger:hover {
+  background: rgba(169, 58, 85, 0.08);
+  color: var(--danger);
+}
+
+body.platform-darwin .app-shell__top-tools {
+  top: 22px;
+}
+
+.web-mode-info-modal {
+  width: min(520px, calc(100vw - 40px));
+}
+
+.web-mode-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.web-mode-info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+}
+
+.web-mode-info-row__label {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.web-mode-info-row__value {
+  font-size: 0.95rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.web-mode-info-row__code {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  word-break: break-all;
+  white-space: pre-wrap;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--code-surface);
+  color: var(--text);
 }
