@@ -118,7 +118,7 @@ Vibe Coding 开发，使用 Codex 软件作为 Agent
 
 ## 许可证
 
-<div align="center>
+<div align="center">
 
 <img src="./assets/pictures/md1.png" width="800">
 
