@@ -12,6 +12,7 @@ interface MockRfbInstance extends EventTarget {
   compressionLevel: number;
   disconnect: ReturnType<typeof vi.fn>;
   sendCredentials: ReturnType<typeof vi.fn>;
+  __url?: string;
 }
 
 const { MockRfb, rfbInstances } = vi.hoisted(() => {
@@ -27,9 +28,11 @@ const { MockRfb, rfbInstances } = vi.hoisted(() => {
     compressionLevel = 0;
     disconnect = vi.fn();
     sendCredentials = vi.fn();
+    __url?: string;
 
-    constructor(target: HTMLElement) {
+    constructor(target: HTMLElement, url?: string) {
       super();
+      this.__url = url;
       instances.push(this);
       target.appendChild(document.createElement('canvas'));
     }
@@ -62,11 +65,36 @@ class MockResizeObserver {
 }
 
 vi.stubGlobal('ResizeObserver', MockResizeObserver);
+vi.stubGlobal('location', new URL('http://127.0.0.1:39281/'));
 
 describe('NoVncViewport', () => {
+  it('uses direct localhost websocket in desktop file mode', async () => {
+    vi.useFakeTimers();
+    rfbInstances.length = 0;
+    vi.stubGlobal('location', new URL('file:///Users/test/Sanaka/index.html'));
+
+    render(
+      <NoVncViewport
+        active
+        machineRunning
+        websocketPort={5700}
+        initialDelayMs={0}
+      />
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(rfbInstances).toHaveLength(1);
+    expect(rfbInstances[0].__url).toBe('ws://127.0.0.1:5700');
+    vi.useRealTimers();
+  });
+
   it('keeps display disconnection separate from machine power state and retries clean disconnects', async () => {
     vi.useFakeTimers();
     rfbInstances.length = 0;
+    vi.stubGlobal('location', new URL('http://127.0.0.1:39281/'));
 
     render(
       <NoVncViewport
@@ -85,6 +113,7 @@ describe('NoVncViewport', () => {
 
     expect(screen.getByText('正在连接画面…')).toBeInTheDocument();
     expect(rfbInstances).toHaveLength(1);
+    expect(rfbInstances[0].__url).toBe('ws://127.0.0.1:39281/api/novnc?port=5700');
 
     await act(async () => {
       rfbInstances[0].dispatchEvent(new Event('connect'));
@@ -110,6 +139,7 @@ describe('NoVncViewport', () => {
   it('switches fit and stretch modes without relying on remote resize requests', async () => {
     vi.useFakeTimers();
     rfbInstances.length = 0;
+    vi.stubGlobal('location', new URL('http://127.0.0.1:39281/'));
 
     const { rerender } = render(
       <NoVncViewport
@@ -126,6 +156,7 @@ describe('NoVncViewport', () => {
     });
 
     expect(rfbInstances).toHaveLength(1);
+    expect(rfbInstances[0].__url).toBe('ws://127.0.0.1:39281/api/novnc?port=5700');
     expect(rfbInstances[0].scaleViewport).toBe(true);
     expect(rfbInstances[0].resizeSession).toBe(false);
 

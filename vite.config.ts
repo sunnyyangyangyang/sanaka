@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -7,7 +8,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    target: 'esnext'
+    target: 'esnext',
+    rollupOptions: {
+      input: {
+        desktop: resolve(__dirname, 'index.html'),
+        web: resolve(__dirname, 'web.html')
+      }
+    }
   },
   test: {
     environment: 'jsdom',

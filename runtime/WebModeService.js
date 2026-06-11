@@ -1,4 +1,23 @@
+const fs = require('fs/promises');
 const http = require('http');
+const path = require('path');
+const { fileURLToPath } = require('url');
+const WebSocket = require('ws');
+const { webModeApiSpec, transformWebModeArgs } = require('./webModeApi');
+
+const MIME_TYPES = {
+  '.css': 'text/css; charset=utf-8',
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml; charset=utf-8',
+  '.ttf': 'font/ttf',
+  '.ico': 'image/x-icon'
+};
 
 function escapeHtml(value) {
   return String(value || '')
@@ -9,16 +28,44 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function normalizeError(error) {
+  if (!error) {
+    return { message: 'Unknown error.' };
+  }
+
+  if (error instanceof Error) {
+    return {
+      message: error.message || 'Unknown error.',
+      code: error.code
+    };
+  }
+
+  if (typeof error === 'string') {
+    return { message: error };
+  }
+
+  return {
+    message: String(error)
+  };
+}
+
 class WebModeService {
   constructor(options = {}) {
     this.appName = options.appName || 'Sanaka';
     this.appVersion = options.appVersion || '0.0.0';
     this.host = options.host || '127.0.0.1';
     this.port = options.port || 0;
+    this.distDir = options.distDir;
     this.getRuntimeSummary = options.getRuntimeSummary || (async () => ({}));
+    this.invokeHandlers = options.invokeHandlers || {};
     this.server = null;
+    this.wsServer = null;
     this.startedAt = null;
     this.boundPort = null;
+    this.clients = new Set();
+    this.socketPairs = new Set();
+    this.channelHandlers = this.#buildChannelHandlers();
+    this.browserApiScript = this.#buildBrowserApiScript();
   }
 
   async start() {
@@ -30,6 +77,11 @@ class WebModeService {
       const server = http.createServer((request, response) => {
         void this.#handleRequest(request, response);
       });
+      const wsServer = new WebSocket.Server({ noServer: true });
+
+      server.on('upgrade', (request, socket, head) => {
+        void this.#handleUpgrade(request, socket, head, wsServer);
+      });
 
       const onError = (error) => {
         server.removeListener('listening', onListening);
@@ -39,6 +91,7 @@ class WebModeService {
       const onListening = () => {
         server.removeListener('error', onError);
         this.server = server;
+        this.wsServer = wsServer;
         this.startedAt = new Date().toISOString();
         this.boundPort = server.address()?.port || this.port;
         resolve();
@@ -72,6 +125,20 @@ class WebModeService {
       return;
     }
 
+    for (const client of this.clients) {
+      client.end();
+    }
+    this.clients.clear();
+    this.#closeSocketPairs();
+    if (this.wsServer) {
+      try {
+        this.wsServer.close();
+      } catch {
+        // ignore
+      }
+      this.wsServer = null;
+    }
+
     const server = this.server;
     this.server = null;
     this.boundPort = null;
@@ -82,20 +149,37 @@ class WebModeService {
     });
   }
 
+  emit(channel, payload) {
+    if (this.clients.size === 0) {
+      return;
+    }
+
+    const data = `event: ${channel}\ndata: ${JSON.stringify(payload ?? null)}\n\n`;
+    for (const client of this.clients) {
+      client.write(data);
+    }
+  }
+
   async #handleRequest(request, response) {
     const url = new URL(request.url || '/', `http://${this.host}:${this.boundPort || this.port || 80}`);
 
     if (url.pathname === '/api/status') {
       const payload = await this.#buildStatusPayload();
-      response.writeHead(200, {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'no-store'
-      });
-      response.end(JSON.stringify(payload));
+      this.#writeJson(response, 200, payload);
       return;
     }
 
-    if (url.pathname === '/healthz') {
+    if (url.pathname === '/api/events') {
+      this.#handleEvents(response);
+      return;
+    }
+
+    if (url.pathname === '/api/rpc' && request.method === 'POST') {
+      await this.#handleRpc(request, response);
+      return;
+    }
+
+    if (url.pathname === '/api/healthz') {
       response.writeHead(200, {
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-store'
@@ -104,12 +188,202 @@ class WebModeService {
       return;
     }
 
-    const payload = await this.#buildStatusPayload();
-    response.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-store'
+    if (url.pathname === '/api/file') {
+      await this.#serveLocalFile(url, response);
+      return;
+    }
+
+    if (url.pathname === '/web-bridge.js') {
+      response.writeHead(200, {
+        'Content-Type': MIME_TYPES['.js'],
+        'Cache-Control': 'no-store'
+      });
+      response.end(this.browserApiScript);
+      return;
+    }
+
+    await this.#serveDist(url.pathname, response);
+  }
+
+  async #handleUpgrade(request, socket, head, wsServer) {
+    const url = new URL(request.url || '/', `http://${this.host}:${this.boundPort || this.port || 80}`);
+    if (url.pathname !== '/api/novnc') {
+      socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    const port = Number.parseInt(url.searchParams.get('port') || '', 10);
+    if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+      socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    wsServer.handleUpgrade(request, socket, head, (clientSocket) => {
+      const targetSocket = new WebSocket(`ws://127.0.0.1:${port}`);
+      const pair = { clientSocket, targetSocket };
+      this.socketPairs.add(pair);
+
+      const dispose = () => {
+        this.socketPairs.delete(pair);
+        if (clientSocket.readyState === WebSocket.OPEN || clientSocket.readyState === WebSocket.CONNECTING) {
+          try {
+            clientSocket.close();
+          } catch {
+            // ignore
+          }
+        }
+        if (targetSocket.readyState === WebSocket.OPEN || targetSocket.readyState === WebSocket.CONNECTING) {
+          try {
+            targetSocket.close();
+          } catch {
+            // ignore
+          }
+        }
+      };
+
+      targetSocket.on('open', () => {
+        clientSocket.on('message', (data, isBinary) => {
+          if (targetSocket.readyState === WebSocket.OPEN) {
+            targetSocket.send(data, { binary: isBinary });
+          }
+        });
+
+        targetSocket.on('message', (data, isBinary) => {
+          if (clientSocket.readyState === WebSocket.OPEN) {
+            clientSocket.send(data, { binary: isBinary });
+          }
+        });
+      });
+
+      clientSocket.on('close', dispose);
+      targetSocket.on('close', dispose);
+      clientSocket.on('error', dispose);
+      targetSocket.on('error', dispose);
     });
-    response.end(this.#renderHtml(payload));
+  }
+
+  #handleEvents(response) {
+    response.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-store',
+      Connection: 'keep-alive'
+    });
+    response.write('\n');
+    this.clients.add(response);
+    response.on('close', () => {
+      this.clients.delete(response);
+    });
+  }
+
+  async #handleRpc(request, response) {
+    try {
+      const rawBody = await this.#readRequestBody(request);
+      const body = rawBody ? JSON.parse(rawBody) : {};
+      const channel = body?.channel;
+      const args = Array.isArray(body?.args) ? body.args : [];
+
+      const handler = this.channelHandlers[channel];
+      if (typeof handler !== 'function') {
+        this.#writeJson(response, 404, {
+          ok: false,
+          error: {
+            message: `Unknown RPC channel: ${channel}`
+          }
+        });
+        return;
+      }
+
+      const result = await handler(...args);
+      this.#writeJson(response, 200, { ok: true, result });
+    } catch (error) {
+      this.#writeJson(response, 500, {
+        ok: false,
+        error: normalizeError(error)
+      });
+    }
+  }
+
+  async #serveDist(pathname, response) {
+    if (!this.distDir) {
+      response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      response.end('Missing dist directory.');
+      return;
+    }
+
+    const requestedPath = pathname === '/' ? '/web.html' : pathname;
+    const safePath = path.normalize(requestedPath).replace(/^(\.\.(\/|\\|$))+/, '');
+    const absolutePath = path.join(this.distDir, safePath);
+
+    try {
+      const stat = await fs.stat(absolutePath);
+      if (stat.isDirectory()) {
+        await this.#serveDist(path.join(requestedPath, 'index.html'), response);
+        return;
+      }
+
+      let content = await fs.readFile(absolutePath);
+      const ext = path.extname(absolutePath).toLowerCase();
+      const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+
+      if (path.basename(absolutePath) === 'index.html' || path.basename(absolutePath) === 'web.html') {
+        content = Buffer.from(this.#injectBridgeIntoHtml(content.toString('utf8')), 'utf8');
+      }
+
+      response.writeHead(200, {
+        'Content-Type': mimeType,
+        'Cache-Control': ext === '.html' ? 'no-store' : 'public, max-age=31536000, immutable'
+      });
+      response.end(content);
+    } catch (error) {
+      response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      response.end('Not found');
+    }
+  }
+
+  async #serveLocalFile(url, response) {
+    const fileUrl = url.searchParams.get('url');
+    const rawPath = url.searchParams.get('path');
+    const filePath = this.#resolveLocalFilePath(fileUrl, rawPath);
+    if (!filePath) {
+      response.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      response.end('Missing file path.');
+      return;
+    }
+
+    try {
+      const content = await fs.readFile(filePath);
+      const ext = path.extname(filePath).toLowerCase();
+      response.writeHead(200, {
+        'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
+        'Cache-Control': 'no-store'
+      });
+      response.end(content);
+    } catch {
+      response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      response.end('Not found');
+    }
+  }
+
+  #resolveLocalFilePath(fileUrl, rawPath) {
+    if (fileUrl) {
+      try {
+        return fileURLToPath(fileUrl);
+      } catch {
+        return null;
+      }
+    }
+
+    if (!rawPath) {
+      return null;
+    }
+
+    if (/^\/[A-Za-z]:\//.test(rawPath)) {
+      return rawPath.slice(1);
+    }
+
+    return rawPath;
   }
 
   async #buildStatusPayload() {
@@ -123,148 +397,239 @@ class WebModeService {
     };
   }
 
-  #renderHtml(payload) {
-    const appName = escapeHtml(payload.appName);
-    const version = escapeHtml(payload.appVersion);
-    const startedAt = payload.startedAt
-      ? escapeHtml(new Date(payload.startedAt).toLocaleString('zh-CN', { hour12: false }))
-      : 'unknown';
-    const url = escapeHtml(payload.url || '');
-    const runningMachines = Number(payload.runtimeSummary?.runningMachines || 0);
-    const qemuAvailable = payload.runtimeSummary?.qemuAvailable ? '可用' : '不可用';
+  #injectBridgeIntoHtml(html) {
+    const marker = '</head>';
+    const scriptTag = '<script src="./web-bridge.js"></script>';
+    if (html.includes(scriptTag)) {
+      return html;
+    }
+    if (html.includes(marker)) {
+      return html.replace(marker, `  ${scriptTag}\n${marker}`);
+    }
+    return `${scriptTag}\n${html}`;
+  }
 
-    return `<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${appName} Web Mode</title>
-    <style>
-      :root {
-        color-scheme: light;
-        --bg: #f6f1fa;
-        --panel: rgba(255,255,255,0.92);
-        --line: rgba(146,121,200,0.22);
-        --text: #2d2439;
-        --muted: #6f6480;
-        --accent: #a28ad5;
-        --accent-strong: #7d64b8;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background:
-          radial-gradient(circle at top left, rgba(162,138,213,0.18), transparent 32%),
-          linear-gradient(180deg, #fbf8ff 0%, var(--bg) 100%);
-        color: var(--text);
-        min-height: 100vh;
-      }
-      .shell {
-        width: min(920px, calc(100% - 32px));
-        margin: 32px auto;
-        padding: 28px;
-        border-radius: 24px;
-        background: var(--panel);
-        border: 1px solid var(--line);
-        box-shadow: 0 18px 48px rgba(88, 68, 118, 0.08);
-      }
-      .eyebrow {
-        display: inline-flex;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: rgba(162,138,213,0.12);
-        color: var(--accent-strong);
-        font-size: 12px;
-        font-weight: 600;
-      }
-      h1 {
-        margin: 16px 0 8px;
-        font-size: 38px;
-        line-height: 1.06;
-      }
-      p {
-        margin: 0;
-        color: var(--muted);
-        line-height: 1.65;
-      }
-      .grid {
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        margin-top: 28px;
-      }
-      .card {
-        border-radius: 18px;
-        border: 1px solid var(--line);
-        background: rgba(255,255,255,0.86);
-        padding: 18px;
-      }
-      .label {
-        color: var(--muted);
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
-      .value {
-        margin-top: 10px;
-        font-size: 26px;
-        font-weight: 700;
-        color: var(--text);
-      }
-      code {
-        display: block;
-        margin-top: 10px;
-        border-radius: 12px;
-        background: rgba(45,36,57,0.05);
-        padding: 12px 14px;
-        color: var(--text);
-        overflow-wrap: anywhere;
-      }
-      .note {
-        margin-top: 24px;
-        padding: 16px 18px;
-        border-radius: 16px;
-        background: rgba(162,138,213,0.08);
-        border: 1px solid rgba(162,138,213,0.16);
-      }
-    </style>
-  </head>
-  <body>
-    <main class="shell">
-      <span class="eyebrow">${appName} Web Mode Preview</span>
-      <h1>${appName} 已打开网页模式</h1>
-      <p>这是网页模式后端的本地入口页。桌面版仍然保持开启；未来这里会承载更完整的远程访问与控制能力。</p>
+  #buildBrowserApiScript() {
+    const contractJson = JSON.stringify(webModeApiSpec);
+    const webSocketLoopbackPattern = '^ws://127\\\\.0\\\\.0\\\\.1:(\\\\d+)/?$';
 
-      <section class="grid">
-        <article class="card">
-          <div class="label">Version</div>
-          <div class="value">${version}</div>
-        </article>
-        <article class="card">
-          <div class="label">Running Machines</div>
-          <div class="value">${runningMachines}</div>
-        </article>
-        <article class="card">
-          <div class="label">QEMU</div>
-          <div class="value">${qemuAvailable}</div>
-        </article>
-      </section>
+    return `
+(() => {
+  const contract = ${contractJson};
+  const originalUrlCtor = window.URL;
+  let sharedEventSource = null;
+  const eventListeners = new Map();
 
-      <section class="card" style="margin-top: 18px;">
-        <div class="label">Local Address</div>
-        <code>${url}</code>
-      </section>
+  function rewriteFileUrl(input) {
+    if (typeof input !== 'string') {
+      return input;
+    }
 
-      <section class="note">
-        <strong>说明</strong>
-        <p style="margin-top: 8px;">这版默认不会自动关闭桌面窗口。想回到桌面版时，直接重新激活或重新打开 Sanaka.app 即可。</p>
-        <p style="margin-top: 8px;">服务启动时间：${startedAt}</p>
-      </section>
-    </main>
-  </body>
-</html>`;
+    if (input.startsWith('file://')) {
+      return window.location.origin + '/api/file?url=' + encodeURIComponent(input);
+    }
+
+    return input;
+  }
+
+  function rewriteWebSocketUrl(input) {
+    if (typeof input !== 'string') {
+      return input;
+    }
+
+    const match = input.match(new RegExp('${webSocketLoopbackPattern}', 'i'));
+    if (match) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return protocol + '//' + window.location.host + '/api/novnc?port=' + encodeURIComponent(match[1]);
+    }
+
+    return input;
+  }
+
+  class BrowserURL extends originalUrlCtor {
+    constructor(input, base) {
+      super(rewriteFileUrl(input), base);
+    }
+
+    static createObjectURL(object) {
+      return originalUrlCtor.createObjectURL(object);
+    }
+
+    static revokeObjectURL(url) {
+      return originalUrlCtor.revokeObjectURL(url);
+    }
+  }
+
+  window.URL = BrowserURL;
+  const OriginalWebSocket = window.WebSocket;
+  function BrowserWebSocket(url, protocols) {
+    return new OriginalWebSocket(rewriteWebSocketUrl(url), protocols);
+  }
+  BrowserWebSocket.prototype = OriginalWebSocket.prototype;
+  Object.setPrototypeOf(BrowserWebSocket, OriginalWebSocket);
+  window.WebSocket = BrowserWebSocket;
+
+  const imageSrcDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+  if (imageSrcDescriptor?.set && imageSrcDescriptor?.get) {
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+      configurable: true,
+      enumerable: imageSrcDescriptor.enumerable,
+      get() {
+        return imageSrcDescriptor.get.call(this);
+      },
+      set(value) {
+        return imageSrcDescriptor.set.call(this, rewriteFileUrl(value));
+      }
+    });
+  }
+
+  function on(channel, handler) {
+    if (typeof handler !== 'function') {
+      return () => {};
+    }
+
+    if (!sharedEventSource) {
+      sharedEventSource = new EventSource('./api/events');
+    }
+
+    const listener = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        handler(payload);
+      } catch {
+        handler(undefined);
+      }
+    };
+
+    sharedEventSource.addEventListener(channel, listener);
+    if (!eventListeners.has(channel)) {
+      eventListeners.set(channel, new Set());
+    }
+    eventListeners.get(channel).add(listener);
+    return () => {
+      if (!sharedEventSource) {
+        return;
+      }
+      sharedEventSource.removeEventListener(channel, listener);
+      const listeners = eventListeners.get(channel);
+      if (listeners) {
+        listeners.delete(listener);
+        if (listeners.size === 0) {
+          eventListeners.delete(channel);
+        }
+      }
+      if (eventListeners.size === 0) {
+        sharedEventSource.close();
+        sharedEventSource = null;
+      }
+    };
+  }
+
+  async function invoke(channel, ...args) {
+    const [namespace, method] = channel.split(':');
+    const payload = {
+      namespace,
+      method: method.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()),
+      channel,
+      args
+    };
+
+    const response = await fetch('./api/rpc', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json().catch(() => ({ ok: false, error: { message: 'Invalid RPC response.' } }));
+    if (!response.ok || !data.ok) {
+      throw new Error(data?.error?.message || 'RPC request failed.');
+    }
+    return data.result;
+  }
+
+  function bindNode(node) {
+    if (!node || typeof node !== 'object') {
+      return node;
+    }
+
+    if (node.type === 'invoke') {
+      return (...args) => invoke(node.channel, ...args);
+    }
+
+    if (node.type === 'event') {
+      return (handler) => on(node.channel, handler);
+    }
+
+    return Object.fromEntries(Object.entries(node).map(([key, value]) => [key, bindNode(value)]));
+  }
+
+  window.electronAPI = bindNode(contract);
+  window.addEventListener('error', (event) => {
+    console.error('[web-mode error]', event.error || event.message || event);
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('[web-mode unhandledrejection]', event.reason);
+  });
+})();
+`;
+  }
+
+  #buildChannelHandlers() {
+    const handlers = {};
+    const walk = (node, stack = []) => {
+      if (!node || typeof node !== 'object') {
+        return;
+      }
+
+      if (node.type === 'invoke') {
+        const namespace = stack[0];
+        const method = stack[1];
+        const namespaceHandlers = this.invokeHandlers?.[namespace];
+        if (typeof namespaceHandlers?.[method] === 'function') {
+          handlers[node.channel] = (...args) => namespaceHandlers[method](...transformWebModeArgs(node.argStyle, args));
+        }
+        return;
+      }
+
+      Object.entries(node).forEach(([key, value]) => walk(value, [...stack, key]));
+    };
+
+    walk(webModeApiSpec);
+    return handlers;
+  }
+
+  async #readRequestBody(request) {
+    const chunks = [];
+    for await (const chunk of request) {
+      chunks.push(chunk);
+    }
+    return Buffer.concat(chunks).toString('utf8');
+  }
+
+  #writeJson(response, statusCode, payload) {
+    response.writeHead(statusCode, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store'
+    });
+    response.end(JSON.stringify(payload));
+  }
+
+  #closeSocketPairs() {
+    for (const pair of this.socketPairs) {
+      try {
+        pair.clientSocket.close();
+      } catch {
+        // ignore
+      }
+      try {
+        pair.targetSocket.close();
+      } catch {
+        // ignore
+      }
+    }
+    this.socketPairs.clear();
   }
 }
 

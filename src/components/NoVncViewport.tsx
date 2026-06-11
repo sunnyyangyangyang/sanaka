@@ -50,7 +50,11 @@ export function NoVncViewport({
     if (!websocketPort) {
       return null;
     }
-    return `ws://127.0.0.1:${websocketPort}`;
+    if (window.location.protocol === 'file:') {
+      return `ws://127.0.0.1:${websocketPort}`;
+    }
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/api/novnc?port=${encodeURIComponent(String(websocketPort))}`;
   }, [websocketPort]);
 
   function applyViewportScale(rfb: RFB) {
@@ -186,10 +190,16 @@ export function NoVncViewport({
     target.replaceChildren();
     setConnectionState(connectionAttempt > 0 ? 'reconnecting' : 'connecting');
 
-    const rfb = new RFB(target, url, {
-      credentials: password ? { password } : undefined,
-      shared: true
-    });
+    let rfb: RFB;
+    try {
+      rfb = new RFB(target, url, {
+        credentials: password ? { password } : undefined,
+        shared: true
+      });
+    } catch {
+      setConnectionState('unavailable');
+      return () => undefined;
+    }
     rfb.viewOnly = false;
     rfb.scaleViewport = scaleMode === 'fit';
     rfb.resizeSession = false;
