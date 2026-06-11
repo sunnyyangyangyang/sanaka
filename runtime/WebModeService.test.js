@@ -31,6 +31,7 @@ describe('WebModeService', () => {
     const service = new WebModeService({
       appName: 'Sanaka',
       appVersion: '0.0.3-beta',
+      host: '127.0.0.1',
       getRuntimeSummary: async () => ({
         qemuAvailable: true,
         runningMachines: 2
@@ -42,6 +43,8 @@ describe('WebModeService', () => {
 
     expect(state.active).toBe(true);
     expect(state.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
+    expect(state.localUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
+    expect(typeof state.networkUrl === 'string' || state.networkUrl === null).toBe(true);
     expect(state.port).toBeGreaterThan(0);
   });
 

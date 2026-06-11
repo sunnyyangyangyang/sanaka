@@ -3,6 +3,7 @@ import { HashRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'r
 import { AboutDialog } from './components/AboutDialog';
 import { AboutPage } from './components/AboutPage';
 import { AppHeaderWeb } from './components/AppHeaderWeb';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import { UpdateReminder } from './components/UpdateReminder';
 import { FullscreenTransition } from './components/FullscreenTransition';
 import { usePresence } from './hooks/usePresence';
@@ -105,6 +106,8 @@ function MainLayout() {
           </div>
         </div>
       </div>
+      {/* 移动端底部导航栏 */}
+      <MobileBottomNav />
       <AboutPage isOpen={aboutPageOpen} onClose={() => setAboutPageOpen(false)} clickPosition={logoClickPosition} />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <UpdateReminder

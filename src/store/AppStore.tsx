@@ -20,6 +20,9 @@ import { parseSakaContent, sanitizeMachineName, serializeSakaMachine } from '../
 function normalizeSettingsForMainline(settings: AppSettings): AppSettings {
   return {
     ...settings,
+    webMode: {
+      port: Number.isInteger(settings.webMode?.port) ? settings.webMode.port : 25895
+    },
     runtimeDefaults: {
       ...settings.runtimeDefaults,
       displayFrontend: 'sanaka',

@@ -140,6 +140,7 @@ function SettingsDrawerSection({
 export function SettingsPage() {
   const { appMeta, settings, persistSettings, setTheme, importTemplateFromDialog, templates, updateTemplateCatalog, updateCurrentInfo, checkForUpdates, runtimeEnvironment } = useAppStore();
   const t = useT();
+  const isWebMode = typeof window !== 'undefined' && window.location.protocol !== 'file:';
   const [params, setParams] = useSearchParams();
   const initialTab = params.get('tab');
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>(tabs.includes(initialTab as (typeof tabs)[number]) ? (initialTab as (typeof tabs)[number]) : 'general');
@@ -339,6 +340,31 @@ export function SettingsPage() {
                   </div>
                 </div>
               </div>
+              <label className="field">
+                <span className="field__label">{t('settings.webModePort')}</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={65535}
+                  value={settings.webMode.port}
+                  disabled={isWebMode}
+                  onChange={(event) => {
+                    const next = Number.parseInt(event.target.value, 10);
+                    if (!Number.isInteger(next)) {
+                      return;
+                    }
+                    void patchSettings({
+                      webMode: {
+                        ...settings.webMode,
+                        port: Math.max(1, Math.min(65535, next))
+                      }
+                    });
+                  }}
+                />
+                <small className="field__hint">
+                  {isWebMode ? t('settings.webModePortWebLocked') : t('settings.webModePortHint')}
+                </small>
+              </label>
               <div className="info-panel">
                 <strong>QEMU Runtime</strong>
                 <p style={{ marginBottom: '8px' }}>

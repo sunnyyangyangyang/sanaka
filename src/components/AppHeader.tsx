@@ -608,6 +608,18 @@ export function AppHeader({ onLogoClick }: AppHeaderProps) {
                 <span className="web-mode-info-row__label">{t('app.webModeUrlLabel')}</span>
                 <code className="web-mode-info-row__code">{webModeState?.url || t('app.webModeUnavailable')}</code>
               </div>
+              {webModeState?.localUrl && (
+                <div className="web-mode-info-row">
+                  <span className="web-mode-info-row__label">Local URL</span>
+                  <code className="web-mode-info-row__code">{webModeState.localUrl}</code>
+                </div>
+              )}
+              {webModeState?.networkUrl && (
+                <div className="web-mode-info-row">
+                  <span className="web-mode-info-row__label">LAN URL</span>
+                  <code className="web-mode-info-row__code">{webModeState.networkUrl}</code>
+                </div>
+              )}
               <div className="web-mode-info-row">
                 <span className="web-mode-info-row__label">{t('app.webModeHostLabel')}</span>
                 <code className="web-mode-info-row__code">{webModeState?.host || '127.0.0.1'}</code>

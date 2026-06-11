@@ -26,6 +26,11 @@ export const appSettingsSchema = z.object({
   language: languageSchema,
   theme: z.enum(['light', 'dark', 'system']).default('system'),
   defaultSaveDirectory: z.string(),
+  webMode: z
+    .object({
+      port: z.number().int().min(1).max(65535).default(25895)
+    })
+    .default({ port: 25895 }),
   runtimeDefaults: z.object({
     displayFrontend: displayFrontendSchema,
     displayBackendHint: displayBackendHintSchema

@@ -16,6 +16,7 @@ const MACHINE_PREVIEW_FILE = 'preview.png';
 const MACHINE_DISKS_DIRECTORY = 'Disks';
 const DEFAULT_MACHINE_ROOT = 'Sanaka';
 const APP_ICON_PATH = path.join(__dirname, 'assets', 'icons', 'sanakafish.png');
+const DEFAULT_WEB_MODE_PORT = 25895;
 
 app.setName('Sanaka');
 
@@ -110,6 +111,16 @@ function getUpdateService() {
   return updateService;
 }
 
+async function readEffectiveSettings() {
+  const loaded = await readJsonFile(SETTINGS_FILE, null);
+  return {
+    ...(loaded || {}),
+    webMode: {
+      port: Number.isInteger(loaded?.webMode?.port) ? loaded.webMode.port : DEFAULT_WEB_MODE_PORT
+    }
+  };
+}
+
 function getExportService() {
   if (!exportService) {
     exportService = new ExportService({
@@ -121,10 +132,22 @@ function getExportService() {
 }
 
 function getWebModeService() {
-  if (!webModeService) {
+  return webModeService;
+}
+
+async function ensureWebModeService() {
+  const settings = await readEffectiveSettings();
+  const configuredPort = Number.isInteger(settings.webMode?.port) ? settings.webMode.port : DEFAULT_WEB_MODE_PORT;
+
+  if (!webModeService || webModeService.port !== configuredPort) {
+    if (webModeService) {
+      await webModeService.stop().catch(() => null);
+    }
+
     webModeService = new WebModeService({
       appName: app.getName(),
       appVersion: app.getVersion(),
+      port: configuredPort,
       distDir: path.join(__dirname, 'dist'),
       getRuntimeSummary: async () => {
         const environment = await getRuntimeManager().getRuntimeEnvironment().catch(() => null);
@@ -137,6 +160,7 @@ function getWebModeService() {
       invokeHandlers: webInvokeHandlers
     });
   }
+
   return webModeService;
 }
 
@@ -789,7 +813,7 @@ const ipcHandlers = {
     return selectedPath ? { path: selectedPath } : null;
   },
   async loadSettings() {
-    return readJsonFile(SETTINGS_FILE, null);
+    return readEffectiveSettings();
   },
   async saveSettings(_event, settings) {
     return writeJsonFile(SETTINGS_FILE, settings);
@@ -822,19 +846,22 @@ const ipcHandlers = {
     };
   },
   async openWebMode() {
-    const state = await getWebModeService().start();
-    if (!state.url) {
+    const state = await (await ensureWebModeService()).start();
+    const openUrl = state.localUrl || state.url;
+    if (!openUrl) {
       throw new Error('Web mode did not provide a usable local URL.');
     }
-    console.log(`[web-mode] opened at ${state.url}`);
-    await shell.openExternal(state.url);
+    console.log(`[web-mode] opened at ${openUrl}`);
+    await shell.openExternal(openUrl);
     return state;
   },
   async getWebModeState() {
-    return getWebModeService().getState();
+    const service = await ensureWebModeService();
+    return service.getState();
   },
   async stopWebMode() {
-    await getWebModeService().stop();
+    const service = await ensureWebModeService();
+    await service.stop();
     return { ok: true };
   },
   consumePendingSakaPaths() {

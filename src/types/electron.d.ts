@@ -102,6 +102,8 @@ export interface AppMetadata {
 export interface WebModeState {
   active: boolean;
   url: string | null;
+  localUrl: string | null;
+  networkUrl: string | null;
   host: string;
   port: number | null;
   startedAt: string | null;

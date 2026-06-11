@@ -590,30 +590,56 @@ static int sanaka_connect_socket(const char *host, int port) {
 
 static int sanaka_extract_json_string(const char *json, const char *key, char *out, size_t out_size) {
   char pattern[64];
-  char *start = NULL;
-  char *end = NULL;
-  size_t length = 0;
+  const char *start = NULL;
+  const char *cursor = NULL;
+  size_t out_index = 0;
   if (json == NULL || key == NULL || out == NULL || out_size == 0) {
     return 0;
   }
 
   sprintf(pattern, "\"%s\":\"", key);
-  start = strstr((char *) json, pattern);
+  start = strstr(json, pattern);
   if (start == NULL) {
     return 0;
   }
   start += strlen(pattern);
-  end = strchr(start, '"');
-  if (end == NULL) {
+  cursor = start;
+
+  while (*cursor != '\0' && *cursor != '"') {
+    if (*cursor == '\\') {
+      cursor++;
+      if (*cursor == '\0') {
+        return 0;
+      }
+      if (out_index + 1 >= out_size) {
+        return 0;
+      }
+      if (*cursor == 'n') {
+        out[out_index++] = '\n';
+      } else if (*cursor == 'r') {
+        out[out_index++] = '\r';
+      } else if (*cursor == 't') {
+        out[out_index++] = '\t';
+      } else if (*cursor == '"' || *cursor == '\\' || *cursor == '/') {
+        out[out_index++] = *cursor;
+      } else {
+        return 0;
+      }
+      cursor++;
+      continue;
+    }
+
+    if (out_index + 1 >= out_size) {
+      return 0;
+    }
+    out[out_index++] = *cursor++;
+  }
+
+  if (*cursor != '"') {
     return 0;
   }
 
-  length = (size_t) (end - start);
-  if (length + 1 > out_size) {
-    return 0;
-  }
-  memcpy(out, start, length);
-  out[length] = '\0';
+  out[out_index] = '\0';
   return 1;
 }
 

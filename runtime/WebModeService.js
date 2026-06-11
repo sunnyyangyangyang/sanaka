@@ -1,5 +1,6 @@
 const fs = require('fs/promises');
 const http = require('http');
+const os = require('os');
 const path = require('path');
 const { fileURLToPath } = require('url');
 const WebSocket = require('ws');
@@ -53,7 +54,7 @@ class WebModeService {
   constructor(options = {}) {
     this.appName = options.appName || 'Sanaka';
     this.appVersion = options.appVersion || '0.0.0';
-    this.host = options.host || '127.0.0.1';
+    this.host = options.host || '0.0.0.0';
     this.port = options.port || 0;
     this.distDir = options.distDir;
     this.getRuntimeSummary = options.getRuntimeSummary || (async () => ({}));
@@ -107,14 +108,19 @@ class WebModeService {
 
   getState() {
     const active = Boolean(this.server && this.boundPort);
-    const url = active ? `http://${this.host}:${this.boundPort}/` : null;
+    const localUrl = active ? `http://127.0.0.1:${this.boundPort}/` : null;
+    const networkHost = this.#resolvePrimaryNetworkHost();
+    const networkUrl = active && networkHost ? `http://${networkHost}:${this.boundPort}/` : null;
+    const url = networkUrl || localUrl;
     return {
       active,
       url,
+      localUrl,
+      networkUrl,
       host: this.host,
       port: this.boundPort,
       startedAt: this.startedAt,
-      localOnly: true
+      localOnly: this.host === '127.0.0.1' || this.host === 'localhost'
     };
   }
 
@@ -630,6 +636,35 @@ class WebModeService {
       }
     }
     this.socketPairs.clear();
+  }
+
+  #resolvePrimaryNetworkHost() {
+    if (!this.server || !this.boundPort) {
+      return null;
+    }
+
+    if (this.host && this.host !== '0.0.0.0' && this.host !== '::') {
+      return this.host;
+    }
+
+    const interfaces = os.networkInterfaces();
+    for (const records of Object.values(interfaces)) {
+      if (!Array.isArray(records)) {
+        continue;
+      }
+
+      for (const record of records) {
+        if (!record || record.internal) {
+          continue;
+        }
+
+        if (record.family === 'IPv4' && record.address) {
+          return record.address;
+        }
+      }
+    }
+
+    return null;
   }
 }
 

@@ -7,6 +7,27 @@ import { usePresence } from '../hooks/usePresence';
 import { makeAudioHint, makeDisplayHint } from '../lib/machine';
 import { formatRuntimeBackend } from '../lib/console-session';
 
+// 移动端检测 hook
+function useMobileDetect() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 760);
+  const [isPortrait, setIsPortrait] = useState(() => window.innerHeight > window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 760);
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
+
+  return { isMobile, isPortrait };
+}
+
 
 /* ---- icons ---- */
 const ArrowLeftIcon = () => (
@@ -221,6 +242,7 @@ export function MachineConsolePage() {
   const menuRef = useRef<HTMLDivElement>(null);
   const terminateModal = usePresence(terminateConfirmOpen);
   const pathParam = searchParams.get('path') ?? undefined;
+  const { isMobile, isPortrait } = useMobileDetect();
 
   const scaleOptions: Array<{ value: NoVncScaleMode; label: string }> = [
     { value: 'native', label: t('console.scaleNative') },
@@ -381,7 +403,7 @@ export function MachineConsolePage() {
   return (
     <div className="page page--console">
       {/* Fixed top toolbar */}
-      <div className="console-topbar" role="toolbar" aria-label={t('console.title')}>
+      <div className={`console-topbar ${isMobile ? 'console-topbar--mobile' : ''}`} role="toolbar" aria-label={t('console.title')}>
         <div className="console-topbar__left">
           <button
             className="console-topbar__btn"
@@ -405,33 +427,39 @@ export function MachineConsolePage() {
         </div>
 
         <div className="console-topbar__right">
-          <div className="console-scale-group" role="group" aria-label={t('console.zoom')}>
-            <span className="console-scale-group__icon" aria-hidden="true">
-              <ScaleIcon />
-            </span>
-            {scaleOptions.map((option) => (
-              <button
-                key={option.value}
-                className={option.value === scaleMode ? 'console-scale-chip console-scale-chip--active' : 'console-scale-chip'}
-                type="button"
-                onClick={() => setScaleMode(option.value)}
-                title={option.label}
-                aria-label={option.label}
-                aria-pressed={option.value === scaleMode}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-          <button
-            className="console-topbar__btn"
-            type="button"
-            onClick={() => setInfoOpen(true)}
-            title={t('console.info')}
-            aria-label={t('console.info')}
-          >
-            <InfoCircleIcon />
-          </button>
+          {/* 桌面端显示缩放控制 */}
+          {!isMobile && (
+            <div className="console-scale-group" role="group" aria-label={t('console.zoom')}>
+              <span className="console-scale-group__icon" aria-hidden="true">
+                <ScaleIcon />
+              </span>
+              {scaleOptions.map((option) => (
+                <button
+                  key={option.value}
+                  className={option.value === scaleMode ? 'console-scale-chip console-scale-chip--active' : 'console-scale-chip'}
+                  type="button"
+                  onClick={() => setScaleMode(option.value)}
+                  title={option.label}
+                  aria-label={option.label}
+                  aria-pressed={option.value === scaleMode ? 'true' : 'false'}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* 桌面端显示信息按钮 */}
+          {!isMobile && (
+            <button
+              className="console-topbar__btn"
+              type="button"
+              onClick={() => setInfoOpen(true)}
+              title={t('console.info')}
+              aria-label={t('console.info')}
+            >
+              <InfoCircleIcon />
+            </button>
+          )}
           <div className="console-dropdown" ref={menuRef}>
             <button
               className="console-topbar__btn"
@@ -440,12 +468,33 @@ export function MachineConsolePage() {
               title={t('console.more')}
               aria-label={t('console.more')}
               aria-haspopup="true"
-              aria-expanded={menuOpen}
+              aria-expanded={menuOpen ? 'true' : 'false'}
             >
               <MoreIcon />
             </button>
             {menuOpen && (
               <div className="console-dropdown__menu" role="menu">
+                {/* 移动端在更多菜单中显示缩放控制 */}
+                {isMobile && (
+                  <div className="console-dropdown__section">
+                    <span className="console-dropdown__label">{t('console.zoom')}</span>
+                    {scaleOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        className={`console-dropdown__item ${option.value === scaleMode ? 'console-dropdown__item--active' : ''}`}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setScaleMode(option.value);
+                          setMenuOpen(false);
+                        }}
+                      >
+                        <span className="console-dropdown__check">{option.value === scaleMode ? '●' : '○'}</span>
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <button
                   className="console-dropdown__item"
                   type="button"
@@ -471,7 +520,7 @@ export function MachineConsolePage() {
                     type="button"
                     role="menuitem"
                     aria-haspopup="true"
-                    aria-expanded={enhancementsOpen}
+                    aria-expanded={enhancementsOpen ? 'true' : 'false'}
                     onClick={() => setEnhancementsOpen((value) => !value)}
                   >
                     <span>{t('console.enhancements')}</span>
@@ -514,28 +563,62 @@ export function MachineConsolePage() {
                     </div>
                   )}
                 </div>
+                {/* 移动端在更多菜单中显示其他操作 */}
+                {isMobile && (
+                  <>
+                    <div className="console-dropdown__divider" />
+                    <button
+                      className="console-dropdown__item"
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleChangeDisk();
+                      }}
+                    >
+                      {t('console.changeDisk')}
+                    </button>
+                    <button
+                      className="console-dropdown__item"
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleReset();
+                      }}
+                      disabled={status !== 'running'}
+                    >
+                      {t('console.reset')}
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
-          <button
-            className="console-topbar__btn"
-            type="button"
-            onClick={handleChangeDisk}
-            title={t('console.changeDisk')}
-            aria-label={t('console.changeDisk')}
-          >
-            <DiskDriveIcon />
-          </button>
-          <button
-            className="console-topbar__btn"
-            type="button"
-            onClick={handleReset}
-            disabled={status !== 'running'}
-            title={t('console.reset')}
-            aria-label={t('console.reset')}
-          >
-            <ResetIcon />
-          </button>
+          {/* 桌面端显示换盘、重启按钮 */}
+          {!isMobile && (
+            <>
+              <button
+                className="console-topbar__btn"
+                type="button"
+                onClick={handleChangeDisk}
+                title={t('console.changeDisk')}
+                aria-label={t('console.changeDisk')}
+              >
+                <DiskDriveIcon />
+              </button>
+              <button
+                className="console-topbar__btn"
+                type="button"
+                onClick={handleReset}
+                disabled={status !== 'running'}
+                title={t('console.reset')}
+                aria-label={t('console.reset')}
+              >
+                <ResetIcon />
+              </button>
+            </>
+          )}
           <button
             className="console-topbar__btn console-topbar__btn--danger"
             type="button"
@@ -550,7 +633,7 @@ export function MachineConsolePage() {
       </div>
 
       {/* Fullscreen viewport */}
-      <div className="console-viewport">
+      <div className={`console-viewport ${isMobile ? 'console-viewport--mobile' : ''}`}>
         {hasLiveConsole ? (
           <NoVncViewport
             active
@@ -606,6 +689,49 @@ export function MachineConsolePage() {
           </div>
         )}
       </div>
+
+      {/* 移动端底部操作栏 */}
+      {isMobile && isPortrait && (
+        <div className="console-mobile-toolbar">
+          <button
+            className="console-mobile-toolbar__btn"
+            type="button"
+            onClick={handleChangeDisk}
+            title={t('console.changeDisk')}
+          >
+            <DiskDriveIcon />
+            <span className="console-mobile-toolbar__label">{t('console.changeDisk')}</span>
+          </button>
+          <button
+            className="console-mobile-toolbar__btn"
+            type="button"
+            onClick={handleReset}
+            disabled={status !== 'running'}
+            title={t('console.reset')}
+          >
+            <ResetIcon />
+            <span className="console-mobile-toolbar__label">{t('console.reset')}</span>
+          </button>
+          <button
+            className="console-mobile-toolbar__btn"
+            type="button"
+            onClick={() => setInfoOpen(true)}
+            title={t('console.info')}
+          >
+            <InfoCircleIcon />
+            <span className="console-mobile-toolbar__label">{t('console.info')}</span>
+          </button>
+          <button
+            className="console-mobile-toolbar__btn"
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            title={t('console.more')}
+          >
+            <MoreIcon />
+            <span className="console-mobile-toolbar__label">{t('console.more')}</span>
+          </button>
+        </div>
+      )}
 
       {/* Info drawer */}
       {infoDrawer.mounted && (

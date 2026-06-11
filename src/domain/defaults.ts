@@ -5,6 +5,9 @@ export const defaultSettings: AppSettings = {
   language: 'zh-CN',
   theme: 'light',
   defaultSaveDirectory: '',
+  webMode: {
+    port: 25895
+  },
   runtimeDefaults: {
     displayFrontend: 'sanaka',
     displayBackendHint: 'vnc'

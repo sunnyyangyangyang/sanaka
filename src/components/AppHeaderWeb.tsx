@@ -231,6 +231,36 @@ export function AppHeaderWeb({ onLogoClick }: AppHeaderWebProps) {
 
   return (
     <>
+      {/* Mobile Header - 小屏幕顶部标题栏 */}
+      <header className="mobile-header">
+        <div className="mobile-header__brand">
+          <img className="mobile-header__logo" src={logoUrl} alt="" />
+          <span className="mobile-header__title">Sanaka</span>
+        </div>
+        <div className="mobile-header__actions">
+          <div className="mobile-header__theme-toggle">
+            <button
+              className={settings.theme === 'light' ? 'mobile-header__theme-btn mobile-header__theme-btn--active' : 'mobile-header__theme-btn'}
+              type="button"
+              aria-label={t('settings.light')}
+              title={t('settings.light')}
+              onClick={() => void setTheme('light')}
+            >
+              <SunIcon />
+            </button>
+            <button
+              className={settings.theme === 'dark' ? 'mobile-header__theme-btn mobile-header__theme-btn--active' : 'mobile-header__theme-btn'}
+              type="button"
+              aria-label={t('settings.dark')}
+              title={t('settings.dark')}
+              onClick={() => void setTheme('dark')}
+            >
+              <MoonIcon />
+            </button>
+          </div>
+        </div>
+      </header>
+
       <aside className="app-sidebar">
         <button className="workspace-brand" type="button" aria-label="Sanaka" title="Sanaka" onClick={handleLogoClick}>
           <img className="workspace-brand__logo" src={logoUrl} alt="" />
