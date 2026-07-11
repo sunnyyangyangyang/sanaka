@@ -11,10 +11,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "pack:mac": "bash ./scripts/package-sanaka-macos.sh /Volumes/sks/src/qemu-11.0.1/build-sanaka",
-    "pack:win": "npx electron-builder --win",
-    "pack:win:dir": "bash ./scripts/package-sanaka-windows.sh",
-    "pack:linux": "npx electron-builder --linux"
+    "pack:mac": "bash ./scripts/package-sanaka-macos.sh",
+    "pack:win": "npx electron-builder --win --publish never",
+    "pack:win:dir": "npx electron-builder --dir --win --publish never",
+    "pack:linux": "npx electron-builder --linux --publish never"
   },
   "keywords": [
     "electron",
@@ -142,10 +142,13 @@
   },
   "dependencies": {
     "@novnc/novnc": "^1.7.0",
+    "@types/sortablejs": "^1.15.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.1",
     "smol-toml": "^1.6.1",
+    "sortablejs": "^1.15.7",
+    "ws": "^8.21.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

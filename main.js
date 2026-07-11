@@ -7,6 +7,8 @@ const { ExportService } = require('./runtime/ExportService');
 const { RuntimeManager } = require('./runtime/RuntimeManager');
 const { UpdateService } = require('./runtime/UpdateService');
 const { WebModeService } = require('./runtime/WebModeService');
+const { ExternalVncViewerService } = require('./runtime/ExternalVncViewerService');
+const { applyControlledEdit, buildArgList, normalizeCustomArgs, removeControlledArg } = require('./runtime/QemuArgsSync');
 
 const SETTINGS_FILE = 'settings.json';
 const RECENTS_FILE = 'recents.json';
@@ -34,6 +36,7 @@ let diskImageService = null;
 let exportService = null;
 let updateService = null;
 let webModeService = null;
+let externalVncViewerService = null;
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
 if (!gotSingleInstanceLock) {
@@ -135,6 +138,43 @@ function getWebModeService() {
   return webModeService;
 }
 
+function getExternalVncViewerService() {
+  if (!externalVncViewerService) {
+    externalVncViewerService = new ExternalVncViewerService();
+  }
+  return externalVncViewerService;
+}
+
+function deriveWebSocketUrl(httpUrl, pathname) {
+  if (!httpUrl || !pathname) {
+    return null;
+  }
+  try {
+    const parsed = new URL(httpUrl);
+    parsed.protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+    parsed.pathname = pathname;
+    parsed.search = '';
+    parsed.hash = '';
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+function decorateExternalVncSession(session, serviceState) {
+  if (!session) {
+    return null;
+  }
+  const websocketPath = `/api/viewer/vnc/${encodeURIComponent(session.id)}`;
+  return {
+    ...session,
+    websocketPath,
+    websocketUrl: deriveWebSocketUrl(serviceState?.url, websocketPath),
+    localWebsocketUrl: deriveWebSocketUrl(serviceState?.localUrl, websocketPath),
+    networkWebsocketUrl: deriveWebSocketUrl(serviceState?.networkUrl, websocketPath)
+  };
+}
+
 async function ensureWebModeService() {
   const settings = await readEffectiveSettings();
   const configuredPort = Number.isInteger(settings.webMode?.port) ? settings.webMode.port : DEFAULT_WEB_MODE_PORT;
@@ -149,6 +189,8 @@ async function ensureWebModeService() {
       appVersion: app.getVersion(),
       port: configuredPort,
       distDir: path.join(__dirname, 'dist'),
+      getRuntimeManager: () => getRuntimeManager(),
+      getExternalVncViewerService: () => getExternalVncViewerService(),
       getRuntimeSummary: async () => {
         const environment = await getRuntimeManager().getRuntimeEnvironment().catch(() => null);
         const runningMachines = await getRuntimeManager().listRunningMachines().catch(() => []);
@@ -833,6 +875,21 @@ const ipcHandlers = {
     await writeJsonFile(RECENTS_FILE, next);
     return next;
   },
+  async reorderRecents(_event, orderedPaths) {
+    const recents = await readJsonFile(RECENTS_FILE, []);
+    const pathSet = new Set(orderedPaths);
+    // Create a map for quick lookup
+    const recentsMap = new Map(recents.map(r => [r.path, r]));
+    // Reorder based on provided paths, keeping any new items at the end
+    const ordered = orderedPaths
+      .map(path => recentsMap.get(path))
+      .filter(Boolean);
+    // Add any items not in orderedPaths (new items) at the end
+    const remaining = recents.filter(r => !pathSet.has(r.path));
+    const next = [...ordered, ...remaining];
+    await writeJsonFile(RECENTS_FILE, next);
+    return next;
+  },
   async getAppMetadata() {
     const defaultMachineDirectory = await ensureDefaultMachineDirectory();
     return {
@@ -884,8 +941,81 @@ const ipcHandlers = {
   async openUpdatePage(_event, url) {
     return getUpdateService().openUpdatePage(url);
   },
+  async createExternalVncSession(_event, request) {
+    const session = getExternalVncViewerService().createSession(request || {});
+    const serviceState = await (await ensureWebModeService()).start();
+    return decorateExternalVncSession(session, serviceState);
+  },
+  async getExternalVncSession(_event, sessionId) {
+    const session = getExternalVncViewerService().getSession(sessionId);
+    const serviceState = webModeService ? webModeService.getState() : null;
+    return decorateExternalVncSession(session, serviceState);
+  },
+  async listExternalVncSessions() {
+    const serviceState = webModeService ? webModeService.getState() : null;
+    return getExternalVncViewerService().listSessions().map((session) => decorateExternalVncSession(session, serviceState));
+  },
+  async closeExternalVncSession(_event, sessionId) {
+    const result = getExternalVncViewerService().closeSession(sessionId);
+    const serviceState = webModeService ? webModeService.getState() : null;
+    return {
+      ...result,
+      session: decorateExternalVncSession(result.session || null, serviceState) || undefined
+    };
+  },
   async getRuntimeEnvironment() {
     return getRuntimeManager().getRuntimeEnvironment();
+  },
+  async buildQemuArgList(_event, machine) {
+    return {
+      args: buildArgList(machine)
+    };
+  },
+  async getFullQemuCommand(_event, machine) {
+    return getRuntimeManager().getFullQemuCommand(machine);
+  },
+  async applyControlledQemuArgEdit(_event, payload) {
+    const machine = payload?.machine;
+    const bindingKey = payload?.bindingKey;
+    const raw = payload?.raw;
+    const nextMachine = applyControlledEdit(machine, bindingKey, raw);
+    if (!nextMachine) {
+      return {
+        ok: false,
+        error: 'Invalid controlled QEMU argument value.'
+      };
+    }
+    return {
+      ok: true,
+      machine: nextMachine,
+      args: buildArgList(nextMachine)
+    };
+  },
+  async removeControlledQemuArg(_event, payload) {
+    const machine = payload?.machine;
+    const bindingKey = payload?.bindingKey;
+    const nextMachine = removeControlledArg(machine, bindingKey);
+    if (!nextMachine) {
+      return {
+        ok: false,
+        error: 'Controlled QEMU argument cannot be removed.'
+      };
+    }
+    return {
+      ok: true,
+      machine: nextMachine,
+      args: buildArgList(nextMachine)
+    };
+  },
+  async normalizeCustomQemuArgs(_event, payload) {
+    const machine = payload?.machine;
+    const customArgs = Array.isArray(payload?.customArgs) ? payload.customArgs : [];
+    const result = normalizeCustomArgs(machine, customArgs);
+    return {
+      ok: true,
+      machine: result.machine,
+      args: result.args
+    };
   },
   async getSharedFolderEnvironment() {
     return getRuntimeManager().getSharedFolderEnvironment();
@@ -919,6 +1049,9 @@ const ipcHandlers = {
   },
   async getMachineState(_event, machineId) {
     return getRuntimeManager().getMachineState(machineId);
+  },
+  async getWebAudioState(_event, machineId) {
+    return getRuntimeManager().getWebAudioState(machineId);
   },
   async listRunningMachines() {
     return getRuntimeManager().listRunningMachines();
@@ -980,12 +1113,18 @@ const webInvokeHandlers = {
   recents: {
     list: wrapWebInvoke(ipcHandlers.listRecents, 'none'),
     push: wrapWebInvoke(ipcHandlers.pushRecent, 'single'),
-    remove: wrapWebInvoke(ipcHandlers.removeRecent, 'single')
+    remove: wrapWebInvoke(ipcHandlers.removeRecent, 'single'),
+    reorder: wrapWebInvoke(ipcHandlers.reorderRecents, 'single')
   },
   runtime: {
     detectQemu: wrapWebInvoke(ipcHandlers.detectQemu, 'none'),
     getRuntimeEnvironment: wrapWebInvoke(ipcHandlers.getRuntimeEnvironment, 'none'),
     getSharedFolderEnvironment: wrapWebInvoke(ipcHandlers.getSharedFolderEnvironment, 'none'),
+    buildQemuArgList: wrapWebInvoke(ipcHandlers.buildQemuArgList, 'single'),
+    getFullQemuCommand: wrapWebInvoke(ipcHandlers.getFullQemuCommand, 'single'),
+    applyControlledQemuArgEdit: wrapWebInvoke(ipcHandlers.applyControlledQemuArgEdit, 'single'),
+    removeControlledQemuArg: wrapWebInvoke(ipcHandlers.removeControlledQemuArg, 'single'),
+    normalizeCustomQemuArgs: wrapWebInvoke(ipcHandlers.normalizeCustomQemuArgs, 'single'),
     previewMachineCommand: wrapWebInvoke(ipcHandlers.previewMachineCommand, 'single'),
     startMachine: wrapWebInvoke(ipcHandlers.startMachine, 'single'),
     stopMachine: wrapWebInvoke(ipcHandlers.stopMachine, 'single'),
@@ -996,6 +1135,7 @@ const webInvokeHandlers = {
     mountSanakaToolsIso: wrapWebInvoke(ipcHandlers.mountSanakaToolsIso, 'single'),
     mountSanakaToolsLinuxIso: wrapWebInvoke(ipcHandlers.mountSanakaToolsLinuxIso, 'single'),
     getMachineState: wrapWebInvoke(ipcHandlers.getMachineState, 'single'),
+    getWebAudioState: wrapWebInvoke(ipcHandlers.getWebAudioState, 'single'),
     listRunningMachines: wrapWebInvoke(ipcHandlers.listRunningMachines, 'none')
   },
   machine: {
@@ -1009,6 +1149,15 @@ const webInvokeHandlers = {
     checkForUpdates: wrapWebInvoke(ipcHandlers.checkForUpdates, 'single'),
     skipVersion: wrapWebInvoke(ipcHandlers.skipUpdateVersion, 'single'),
     openUpdatePage: wrapWebInvoke(ipcHandlers.openUpdatePage, 'single')
+  },
+  viewer: {
+    createExternalVncSession: wrapWebInvoke(ipcHandlers.createExternalVncSession, 'single'),
+    getExternalVncSession: wrapWebInvoke(ipcHandlers.getExternalVncSession, 'single'),
+    listExternalVncSessions: wrapWebInvoke(ipcHandlers.listExternalVncSessions, 'none'),
+    closeExternalVncSession: wrapWebInvoke(ipcHandlers.closeExternalVncSession, 'single'),
+    reserveExternalVncProxyTarget: wrapWebInvoke((_event, sessionId) => getExternalVncViewerService().reserveProxyTarget(sessionId), 'single'),
+    markExternalVncProxyConnected: wrapWebInvoke((_event, sessionId) => getExternalVncViewerService().markProxyConnected(sessionId), 'single'),
+    releaseExternalVncProxyTarget: wrapWebInvoke((_event, sessionId, options) => getExternalVncViewerService().releaseProxyTarget(sessionId, options || {}), 'spread')
   },
   app: {
     getMetadata: wrapWebInvoke(ipcHandlers.getAppMetadata, 'none'),
@@ -1097,6 +1246,7 @@ app.whenReady().then(() => {
   ipcMain.handle('recents:list', ipcHandlers.listRecents);
   ipcMain.handle('recents:push', ipcHandlers.pushRecent);
   ipcMain.handle('recents:remove', ipcHandlers.removeRecent);
+  ipcMain.handle('recents:reorder', ipcHandlers.reorderRecents);
   ipcMain.handle('app:get-metadata', ipcHandlers.getAppMetadata);
   ipcMain.handle('app:open-web-mode', ipcHandlers.openWebMode);
   ipcMain.handle('app:get-web-mode-state', ipcHandlers.getWebModeState);
@@ -1107,9 +1257,18 @@ app.whenReady().then(() => {
   ipcMain.handle('updater:check-for-updates', ipcHandlers.checkForUpdates);
   ipcMain.handle('updater:skip-version', ipcHandlers.skipUpdateVersion);
   ipcMain.handle('updater:open-update-page', ipcHandlers.openUpdatePage);
+  ipcMain.handle('viewer:create-external-vnc-session', ipcHandlers.createExternalVncSession);
+  ipcMain.handle('viewer:get-external-vnc-session', ipcHandlers.getExternalVncSession);
+  ipcMain.handle('viewer:list-external-vnc-sessions', ipcHandlers.listExternalVncSessions);
+  ipcMain.handle('viewer:close-external-vnc-session', ipcHandlers.closeExternalVncSession);
   ipcMain.handle('runtime:detect-qemu', ipcHandlers.detectQemu);
   ipcMain.handle('runtime:get-environment', ipcHandlers.getRuntimeEnvironment);
   ipcMain.handle('runtime:get-shared-folder-environment', ipcHandlers.getSharedFolderEnvironment);
+  ipcMain.handle('runtime:build-qemu-arg-list', ipcHandlers.buildQemuArgList);
+  ipcMain.handle('runtime:get-full-qemu-command', ipcHandlers.getFullQemuCommand);
+  ipcMain.handle('runtime:apply-controlled-qemu-arg-edit', ipcHandlers.applyControlledQemuArgEdit);
+  ipcMain.handle('runtime:remove-controlled-qemu-arg', ipcHandlers.removeControlledQemuArg);
+  ipcMain.handle('runtime:normalize-custom-qemu-args', ipcHandlers.normalizeCustomQemuArgs);
   ipcMain.handle('runtime:preview-machine-command', ipcHandlers.previewMachineCommand);
   ipcMain.handle('runtime:start-machine', ipcHandlers.startMachine);
   ipcMain.handle('runtime:stop-machine', ipcHandlers.stopMachine);
@@ -1120,6 +1279,7 @@ app.whenReady().then(() => {
   ipcMain.handle('runtime:mount-sanaka-tools-iso', ipcHandlers.mountSanakaToolsIso);
   ipcMain.handle('runtime:mount-sanaka-tools-linux-iso', ipcHandlers.mountSanakaToolsLinuxIso);
   ipcMain.handle('runtime:get-machine-state', ipcHandlers.getMachineState);
+  ipcMain.handle('runtime:get-web-audio-state', ipcHandlers.getWebAudioState);
   ipcMain.handle('runtime:list-running-machines', ipcHandlers.listRunningMachines);
   ipcMain.handle('machine:update-shared-folder', ipcHandlers.updateSharedFolder);
   ipcMain.handle('machine:update-clipboard-bridge', ipcHandlers.updateClipboardBridge);

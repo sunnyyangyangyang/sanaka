@@ -47,12 +47,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   recents: {
     list: () => ipcRenderer.invoke('recents:list'),
     push: (entry) => ipcRenderer.invoke('recents:push', entry),
-    remove: (path) => ipcRenderer.invoke('recents:remove', path)
+    remove: (path) => ipcRenderer.invoke('recents:remove', path),
+    reorder: (paths) => ipcRenderer.invoke('recents:reorder', paths)
   },
   runtime: {
     detectQemu: () => ipcRenderer.invoke('runtime:detect-qemu'),
     getRuntimeEnvironment: () => ipcRenderer.invoke('runtime:get-environment'),
     getSharedFolderEnvironment: () => ipcRenderer.invoke('runtime:get-shared-folder-environment'),
+    buildQemuArgList: (machine) => ipcRenderer.invoke('runtime:build-qemu-arg-list', machine),
+    getFullQemuCommand: (machine) => ipcRenderer.invoke('runtime:get-full-qemu-command', machine),
+    applyControlledQemuArgEdit: (payload) => ipcRenderer.invoke('runtime:apply-controlled-qemu-arg-edit', payload),
+    removeControlledQemuArg: (payload) => ipcRenderer.invoke('runtime:remove-controlled-qemu-arg', payload),
+    normalizeCustomQemuArgs: (payload) => ipcRenderer.invoke('runtime:normalize-custom-qemu-args', payload),
     previewMachineCommand: (bundlePath) => ipcRenderer.invoke('runtime:preview-machine-command', bundlePath),
     startMachine: (bundlePath) => ipcRenderer.invoke('runtime:start-machine', bundlePath),
     stopMachine: (machineId) => ipcRenderer.invoke('runtime:stop-machine', machineId),
@@ -79,6 +85,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     skipVersion: (version) => ipcRenderer.invoke('updater:skip-version', version),
     openUpdatePage: (url) => ipcRenderer.invoke('updater:open-update-page', url),
     onUpdateAvailable: (handler) => on('app:update-available', handler)
+  },
+  viewer: {
+    createExternalVncSession: (request) => ipcRenderer.invoke('viewer:create-external-vnc-session', request),
+    getExternalVncSession: (sessionId) => ipcRenderer.invoke('viewer:get-external-vnc-session', sessionId),
+    listExternalVncSessions: () => ipcRenderer.invoke('viewer:list-external-vnc-sessions'),
+    closeExternalVncSession: (sessionId) => ipcRenderer.invoke('viewer:close-external-vnc-session', sessionId)
   },
   app: {
     getMetadata: () => ipcRenderer.invoke('app:get-metadata'),
